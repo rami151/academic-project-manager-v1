@@ -4,6 +4,8 @@ import com.academic.backend.shared.enums.GenerationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -36,7 +38,8 @@ public class GeminiGeneration {
     private String rawResponse;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status", columnDefinition = "generation_status_enum", nullable = false)
     @Builder.Default
     private GenerationStatus status = GenerationStatus.PENDING;
 

@@ -4,6 +4,8 @@ import com.academic.backend.shared.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -26,7 +28,8 @@ public class Notification {
     private User recipient;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "type", columnDefinition = "notif_type_enum", nullable = false)
     private NotificationType type;
 
     @Column(nullable = false, columnDefinition = "TEXT")
