@@ -1,64 +1,50 @@
 # Academic Project Manager
 
 ## Tech Stack
-- **Spring Boot 4.0.4**, **Java 21**
-- **PostgreSQL** via Docker Compose
-- **Flyway** for migrations (`backend/src/main/resources/db/migration/`)
+- **Spring Boot 4.0.4**, **Java 21**, **PostgreSQL** (via Docker Compose)
+- **Flyway** migrations (`backend/src/main/resources/db/migration/`)
 - **Spring Security** + **JWT** (jjwt 0.12.6)
-- **Lombok** for entity boilerplate
-- **WebSocket** for real-time features
+- **Angular 21** frontend with Vitest for tests
 - JPA `ddl-auto: validate` — never change to `update`
 
-## Dev Setup
+## Dev Commands
 
 ```bash
-# Start DB
-docker compose up -d
+# Backend
+docker compose up -d                    # Start DB + pgAdmin (http://localhost:5050)
+cd backend && ./mvnw clean spring-boot:run   # Run app
+cd backend && ./mvnw test              # Run all tests
+cd backend && ./mvnw test -Dtest=ClassName    # Run single test class
 
-# Run app (uses mvnw)
-cd backend && ./mvnw clean spring-boot:run
-
-# Run tests
-cd backend && ./mvnw test
-
-# Run single test
-cd backend && ./mvnw test -Dtest=BackendApplicationTests
+# Frontend
+cd frontend && npm start               # Dev server at http://localhost:4200
+cd frontend && npm test                 # Vitest tests
 ```
 
-**Prerequisites**: Docker must be running for the Postgres container. The app connects to `localhost:5432/academic_db` with `postgres/postgres`.
-
-## Package Structure
-- `controller/` - REST controllers (AuthController)
-- `service/` - Business logic (AuthService, UserDetailsServiceImpl)
-- `repository/` - JPA repositories (UserRepository)
-- `security/` - JWT, filters, UserDetails
-- `config/` - Security configuration
-- `dto/` - Request/Response DTOs
-- `exception/` - Global exception handling
-- `shared/entity/` - JPA entities
-- `shared/enums/` - PostgreSQL enum types
-
 ## Architecture
-- DB schema is DB-first via Flyway SQL (`V1__init_schema.sql`). JPA entities are read-only for schema enforcement.
-- JWT secret is hardcoded in `application.yml` — do not commit real secrets.
-
-## DB Conventions
+- **DB-first**: Schema defined in Flyway SQL, JPA entities are read-only for enforcement
+- JWT secret hardcoded in `application.yml` — do not commit real secrets
 - All tables use UUID primary keys via `gen_random_uuid()` / `pgcrypto`
 - `updated_at` auto-updated via PostgreSQL triggers
-- Seed admin user: `admin@academic.com` / `admin123` (UUID `00000000-0000-0000-0000-000000000001`)
+
+## DB Conventions
+- Seed admin: `admin@academic.com` / `admin123` (UUID `00000000-0000-0000-0000-000000000001`)
+- Connection: `localhost:5432/academic_db` with `postgres/postgres`
+- **pgAdmin**: http://localhost:5050 (`admin@academic.com` / `admin`)
 
 ## Hibernate Enum Handling
-- All enum fields must use `@JdbcTypeCode(SqlTypes.NAMED_ENUM)` for PostgreSQL native enums
-- Example: `@Enumerated(EnumType.STRING) @JdbcTypeCode(SqlTypes.NAMED_ENUM) @Column(columnDefinition = "role_enum")`
+All enum fields must use `@JdbcTypeCode(SqlTypes.NAMED_ENUM)` for PostgreSQL native enums:
+```java
+@Enumerated(EnumType.STRING) @JdbcTypeCode(SqlTypes.NAMED_ENUM) @Column(columnDefinition = "role_enum")
+```
 
 ## Auth Endpoints
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login (returns JWT)
-- `GET /api/auth/me` - Get current user (requires JWT in Authorization header)
-- Public endpoints: `/api/auth/login`, `/api/auth/register`
-- Protected endpoints: `/api/auth/me`, `/api/**`
+| Method | Endpoint | Auth |
+|--------|----------|------|
+| POST | `/api/auth/register` | Public |
+| POST | `/api/auth/login` | Public |
+| GET | `/api/auth/me` | JWT Required |
 
 ## Code Style
-- Add `//` comments to all non-trivial methods and logic blocks
-- Comments should be professional, short, and explain the **why** or **what** — not the obvious
+- Add `//` comments to non-trivial methods explaining the **why**, not the obvious
 - Example: `// Validate JWT token` not `// This validates the JWT token`
