@@ -1,0 +1,117 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .brand-name {
+    font-size: 20px;
+    font-weight: 600;
+  }
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.nav-links {
+  display: flex;
+  gap: 8px;
+  margin-right: 16px;
+
+  button {
+    mat-icon {
+      margin-right: 4px;
+    }
+  }
+
+  .ai-badge {
+    margin-left: 8px;
+    height: 20px;
+    font-size: 10px;
+    background-color: #ff9800;
+    color: white;
+  }
+}
+
+.user-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: white;
+    color: #667eea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .user-name {
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
+}
+
+.user-menu-header {
+  padding: 16px;
+  background: #f5f5f5;
+
+  .user-email {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 8px;
+  }
+
+  .role-teacher {
+    background-color: #ff9800;
+    color: white;
+  }
+
+  .role-student {
+    background-color: #2196f3;
+    color: white;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 8px;
+
+    .brand-name {
+      font-size: 16px;
+    }
+
+    .nav-links button span {
+      display: none;
+    }
+
+    .user-name {
+      display: none;
+    }
+  }
+}

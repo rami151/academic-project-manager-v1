@@ -1,1 +1,57 @@
-<p>navbar works!</p>
+<mat-toolbar color="primary" class="navbar">
+  <div class="navbar-brand" (click)="navigateTo('/projects')">
+    <mat-icon>rocket_launch</mat-icon>
+    <span class="brand-name">Academic PM</span>
+  </div>
+  
+  <span class="spacer"></span>
+  
+  <div class="nav-links">
+    <button mat-button (click)="navigateTo('/projects')">
+      <mat-icon>dashboard</mat-icon>
+      <span>Projets</span>
+    </button>
+    
+    <button mat-button>
+      <mat-icon>smart_toy</mat-icon>
+      <span>IA</span>
+      <mat-chip class="ai-badge">Bêta</mat-chip>
+    </button>
+  </div>
+  
+  <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
+    <div class="user-avatar">
+      {{ getUserInitial() }}
+    </div>
+    <span class="user-name">{{ currentUser?.name }}</span>
+    <mat-icon>arrow_drop_down</mat-icon>
+  </button>
+  
+  <mat-menu #userMenu="matMenu">
+    <div class="user-menu-header">
+      <div class="user-email">{{ currentUser?.email }}</div>
+      <mat-chip [class]="currentUser?.role === 'TEACHER' ? 'role-teacher' : 'role-student'">
+        {{ currentUser?.role === 'TEACHER' ? 'Enseignant' : 'Étudiant' }}
+      </mat-chip>
+    </div>
+    
+    <mat-divider></mat-divider>
+    
+    <button mat-menu-item (click)="navigateTo('/profile')">
+      <mat-icon>person</mat-icon>
+      <span>Mon Profil</span>
+    </button>
+    
+    <button mat-menu-item (click)="navigateTo('/settings')">
+      <mat-icon>settings</mat-icon>
+      <span>Paramètres</span>
+    </button>
+    
+    <mat-divider></mat-divider>
+    
+    <button mat-menu-item (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      <span>Déconnexion</span>
+    </button>
+  </mat-menu>
+</mat-toolbar>

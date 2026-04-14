@@ -1,1 +1,151 @@
-<p>project-detail works!</p>
+<div class="project-detail-container">
+  @if (isLoading) {
+    <div class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="error-message">{{ errorMessage }}</div>
+  }
+
+  @if (!isLoading && !errorMessage && project) {
+    <div class="detail-content">
+      <div class="header">
+        <button mat-button (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon>
+          Retour
+        </button>
+      </div>
+
+      <mat-card class="project-header-card">
+        <mat-card-header>
+          <mat-card-title class="project-title">{{ project.name }}</mat-card-title>
+          <mat-chip [class]="'status-chip ' + project.status.toLowerCase()">
+            {{ project.status === 'ACTIVE' ? 'Actif' : 'Archivé' }}
+          </mat-chip>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="info-cards-grid">
+            <mat-card class="info-card">
+              <div class="info-card-content">
+                <mat-icon>description</mat-icon>
+                <div class="info-card-text">
+                  <span class="info-label">Description</span>
+                  <p class="info-value">{{ project.description }}</p>
+                </div>
+              </div>
+            </mat-card>
+
+            <mat-card class="info-card">
+              <div class="info-card-content">
+                <mat-icon>event</mat-icon>
+                <div class="info-card-text">
+                  <span class="info-label">Date limite</span>
+                  <span class="info-value">{{ project.deadline ? formatDeadline(project.deadline) : 'N/A' }}</span>
+                </div>
+              </div>
+            </mat-card>
+
+            <mat-card class="info-card">
+              <div class="info-card-content">
+                <mat-icon>person</mat-icon>
+                <div class="info-card-text">
+                  <span class="info-label">Propriétaire</span>
+                  <span class="info-value">{{ project.owner?.name || 'N/A' }}</span>
+                  <span class="info-email">{{ project.owner?.email || '' }}</span>
+                </div>
+              </div>
+            </mat-card>
+          </div>
+
+          <div class="progress-section">
+            <h3>Progression</h3>
+            <mat-progress-bar 
+              mode="determinate" 
+              [value]="calculateProgress()"
+              color="primary"
+            ></mat-progress-bar>
+            <span class="progress-text">
+              {{ project.completedTasks || 0 }} / {{ project.totalTasks || 0 }} tâches ({{ calculateProgress() }}%)
+            </span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="members-card">
+        <mat-card-header>
+          <mat-card-title>Membres ({{ members.length }})</mat-card-title>
+          @if (canInviteMembers()) {
+            <button mat-raised-button color="primary" (click)="openInviteDialog()">
+              <mat-icon>person_add</mat-icon>
+              Inviter
+            </button>
+          }
+        </mat-card-header>
+        
+        <mat-card-content>
+          <table mat-table [dataSource]="members" class="members-table">
+            <ng-container matColumnDef="user">
+              <th mat-header-cell *matHeaderCellDef>Utilisateur</th>
+              <td mat-cell *matCellDef="let member">
+                <div class="user-cell">
+                  <div class="avatar">{{ getUserInitials(member.user?.name) }}</div>
+                  <div class="user-info">
+                    <span class="user-name">{{ member.user?.name }}</span>
+                    <span class="user-email">{{ member.user?.email }}</span>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="permission">
+              <th mat-header-cell *matHeaderCellDef>Permission</th>
+              <td mat-cell *matCellDef="let member">
+                <mat-chip [class]="getPermissionBadgeClass(member.permission)">
+                  {{ getPermissionLabel(member.permission) }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="joinedAt">
+              <th mat-header-cell *matHeaderCellDef>Inscrit le</th>
+              <td mat-cell *matCellDef="let member">
+                {{ formatDate(member.joinedAt) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let member">
+                @if (canModifyMember(member)) {
+                  <button mat-icon-button [matMenuTriggerFor]="memberMenu">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #memberMenu="matMenu">
+                    <button mat-menu-item (click)="updateMemberPermission(member, 'EDITOR')">
+                      <mat-icon>edit</mat-icon>
+                      <span>Passer en éditeur</span>
+                    </button>
+                    <button mat-menu-item (click)="updateMemberPermission(member, 'VIEWER')">
+                      <mat-icon>visibility</mat-icon>
+                      <span>Passer en lecteur</span>
+                    </button>
+                    <button mat-menu-item (click)="removeMember(member)">
+                      <mat-icon>delete</mat-icon>
+                      <span>Retirer du projet</span>
+                    </button>
+                  </mat-menu>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</div>

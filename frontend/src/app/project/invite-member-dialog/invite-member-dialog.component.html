@@ -1,0 +1,43 @@
+<h2 mat-dialog-title>Inviter un membre</h2>
+<mat-dialog-content>
+  <form [formGroup]="inviteForm" (ngSubmit)="onSubmit()">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Email</mat-label>
+      <mat-icon matPrefix>email</mat-icon>
+      <input matInput formControlName="email" type="email" />
+      <mat-error *ngIf="inviteForm.get('email')?.hasError('required')">Email requis</mat-error>
+      <mat-error *ngIf="inviteForm.get('email')?.hasError('email')">Email invalide</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Permission</mat-label>
+      <mat-select formControlName="permission">
+        @for (permission of permissions; track permission.value) {
+          <mat-option [value]="permission.value">
+            <div class="permission-option">
+              <span class="permission-label">{{ permission.label }}</span>
+              <span class="permission-description">{{ permission.description }}</span>
+            </div>
+          </mat-option>
+        }
+      </mat-select>
+      <mat-error *ngIf="inviteForm.get('permission')?.hasError('required')">Permission requise</mat-error>
+    </mat-form-field>
+
+    <div class="error-message" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Annuler</button>
+  <button 
+    mat-raised-button 
+    color="primary" 
+    (click)="onSubmit()" 
+    [disabled]="isSubmitting || inviteForm.invalid"
+  >
+    <mat-spinner diameter="20" *ngIf="isSubmitting"></mat-spinner>
+    <span *ngIf="!isSubmitting">Inviter</span>
+  </button>
+</mat-dialog-actions>

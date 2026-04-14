@@ -1,0 +1,8 @@
+main {
+  min-height: calc(100vh - 64px);
+  background-color: #f5f5f5;
+
+  &.with-navbar {
+    padding-top: 64px;
+  }
+}

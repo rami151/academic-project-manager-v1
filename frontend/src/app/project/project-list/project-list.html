@@ -1,1 +1,72 @@
-<p>project-list works!</p>
+<div class="project-list-container">
+  <header class="header">
+    <h1>Mes Projets</h1>
+    <button mat-raised-button color="primary" (click)="openCreateDialog()">
+      <mat-icon>add</mat-icon>
+      Nouveau Projet
+    </button>
+  </header>
+
+  @if (isLoading) {
+    <div class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="error-message">{{ errorMessage }}</div>
+  }
+
+  @if (!isLoading && !errorMessage && projects.length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon">folder_open</mat-icon>
+      <h2>Aucun projet</h2>
+      <p>Commencez par créer votre premier projet</p>
+      <button mat-raised-button color="primary" (click)="openCreateDialog()">
+        <mat-icon>add</mat-icon>
+        Créer un projet
+      </button>
+    </div>
+  }
+
+  @if (!isLoading && !errorMessage && projects.length > 0) {
+    <div class="projects-grid">
+      @for (project of projects; track project.id) {
+        <mat-card class="project-card" (click)="navigateToDetail(project.id)">
+          <mat-card-header>
+            <mat-card-title>{{ project.name }}</mat-card-title>
+            <mat-chip [class]="'status-chip ' + project.status.toLowerCase()">
+              {{ project.status === 'ACTIVE' ? 'Actif' : 'Archivé' }}
+            </mat-chip>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <p class="description">{{ project.description }}</p>
+            
+            <div class="progress-section">
+              <mat-progress-bar 
+                mode="determinate" 
+                [value]="calculateProgress(project)"
+                [color]="project.status === 'ACTIVE' ? 'primary' : 'accent'"
+              ></mat-progress-bar>
+              <span class="progress-text">
+                {{ project.completedTasks || 0 }} / {{ project.totalTasks || 0 }} tâches
+              </span>
+            </div>
+            
+            <div class="meta-info">
+              <div class="meta-item">
+                <mat-icon>calendar_today</mat-icon>
+                <span>{{ formatDeadline(project.deadline) }}</span>
+              </div>
+              <div class="meta-item">
+                <mat-icon>people</mat-icon>
+                <span>{{ project.membersCount || 1 }} membre{{ (project.membersCount || 1) > 1 ? 's' : '' }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  }
+</div>
