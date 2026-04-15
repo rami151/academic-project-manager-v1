@@ -40,6 +40,7 @@ export class ProjectDetailComponent implements OnInit {
   errorMessage = '';
   currentUserPermission: Permission = 'VIEWER';
   displayedColumns = ['user', 'permission', 'joinedAt', 'actions'];
+  openMenuMemberId: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -152,6 +153,10 @@ export class ProjectDetailComponent implements OnInit {
     return this.currentUserPermission === 'OWNER';
   }
 
+  toggleMemberMenu(memberId: string): void {
+    this.openMenuMemberId = this.openMenuMemberId === memberId ? null : memberId;
+  }
+
   canEditProject(): boolean {
     return this.currentUserPermission === 'OWNER' || this.currentUserPermission === 'EDITOR';
   }
@@ -182,6 +187,14 @@ export class ProjectDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/projects']);
+  }
+
+  navigateToKanban(): void {
+    const projectId = this.route.snapshot.paramMap.get('id');
+    console.log('Navigating to kanban with projectId:', projectId);
+    if (projectId) {
+      this.router.navigate(['/tasks', 'projects', projectId, 'kanban']);
+    }
   }
 
   formatDeadline(deadline: string): string {

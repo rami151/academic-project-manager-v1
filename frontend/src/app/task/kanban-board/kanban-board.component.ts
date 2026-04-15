@@ -1,0 +1,130 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
+import { CdkDragDrop, moveItemInArray, transferArrayItem, DragDropModule } from '@angular/cdk/drag-drop';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TaskService } from '../../core/services/task.service';
+import { Task } from '../../core/models/task.model';
+import { TaskFormDialogComponent } from '../task-form-dialog/task-form-dialog.component';
+import { AiGenerationDialogComponent } from '../ai-generation-dialog/ai-generation-dialog.component';
+import { AiReviewDialogComponent } from '../ai-review-dialog/ai-review-dialog.component';
+import { TaskCardComponent } from '../task-card/task-card.component';
+
+interface Column {
+  name: string;
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  tasks: Task[];
+}
+
+@Component({
+  selector: 'app-kanban-board',
+  templateUrl: './kanban-board.component.html',
+  styleUrls: ['./kanban-board.component.scss'],
+  standalone: true,
+  imports: [CommonModule, DragDropModule, MatDialogModule, MatButtonModule, MatCardModule, MatIconModule, MatProgressSpinnerModule, TaskCardComponent]
+})
+export class KanbanBoardComponent implements OnInit {
+  projectId: string = '';
+  columns: Column[] = [
+    { name: 'À faire', status: 'TODO', tasks: [] },
+    { name: 'En cours', status: 'IN_PROGRESS', tasks: [] },
+    { name: 'Terminé', status: 'DONE', tasks: [] }
+  ];
+  loading = false;
+
+  constructor(
+    private route: ActivatedRoute,
+    private taskService: TaskService,
+    private dialog: MatDialog
+  ) {}
+
+  ngOnInit(): void {
+    this.projectId = this.route.snapshot.paramMap.get('projectId') || '';
+    console.log('KanbanBoardComponent - projectId from route:', this.projectId);
+    if (!this.projectId) {
+      console.error('KanbanBoardComponent - projectId is empty!');
+    }
+    this.loadTasks();
+  }
+
+  loadTasks(): void {
+    this.loading = true;
+    console.log('Loading tasks for projectId:', this.projectId);
+    this.taskService.getProjectTasks(this.projectId).subscribe({
+      next: (tasksMap) => {
+        console.log('Tasks received:', tasksMap);
+        this.columns[0].tasks = tasksMap['TODO'] || [];
+        this.columns[1].tasks = tasksMap['IN_PROGRESS'] || [];
+        this.columns[2].tasks = tasksMap['DONE'] || [];
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading tasks:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  onDrop(event: CdkDragDrop<Task[]>): void {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      const task = event.previousContainer.data[event.previousIndex];
+      const newStatus = this.columns.find(c => c.tasks === event.container.data)?.status || 'TODO';
+      
+      this.taskService.moveTask(task.id, newStatus, event.currentIndex).subscribe({
+        next: () => {
+          transferArrayItem(
+            event.previousContainer.data,
+            event.container.data,
+            event.previousIndex,
+            event.currentIndex
+          );
+        },
+        error: () => {
+          this.loadTasks();
+        }
+      });
+    }
+  }
+
+  openTaskForm(status: 'TODO' | 'IN_PROGRESS' | 'DONE'): void {
+    const dialogRef = this.dialog.open(TaskFormDialogComponent, {
+      width: '500px',
+      data: { projectId: this.projectId, status }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadTasks();
+      }
+    });
+  }
+
+  openAiGeneration(): void {
+    const dialogRef = this.dialog.open(AiGenerationDialogComponent, {
+      width: '600px',
+      data: { projectId: this.projectId }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.generationId) {
+        this.openAiReview(result.generationId);
+      }
+    });
+  }
+
+  openAiReview(generationId: string): void {
+    this.dialog.open(AiReviewDialogComponent, {
+      width: '800px',
+      maxHeight: '90vh',
+      data: { generationId, projectId: this.projectId }
+    }).afterClosed().subscribe(() => {
+      this.loadTasks();
+    });
+  }
+}

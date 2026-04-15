@@ -1,7 +1,11 @@
-@if (showNavbar) {
-  <app-navbar></app-navbar>
-}
+<div class="min-h-screen bg-neutral-50">
+  @if (showLandingNavbar) {
+    <app-landing-navbar></app-landing-navbar>
+  } @else if (showNavbar) {
+    <app-navbar></app-navbar>
+  }
 
-<main [class.with-navbar]="showNavbar">
-  <router-outlet></router-outlet>
-</main>
+  <main>
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -1,57 +1,109 @@
-<mat-toolbar color="primary" class="navbar">
-  <div class="navbar-brand" (click)="navigateTo('/projects')">
-    <mat-icon>rocket_launch</mat-icon>
-    <span class="brand-name">Academic PM</span>
-  </div>
-  
-  <span class="spacer"></span>
-  
-  <div class="nav-links">
-    <button mat-button (click)="navigateTo('/projects')">
-      <mat-icon>dashboard</mat-icon>
-      <span>Projets</span>
-    </button>
-    
-    <button mat-button>
-      <mat-icon>smart_toy</mat-icon>
-      <span>IA</span>
-      <mat-chip class="ai-badge">Bêta</mat-chip>
-    </button>
-  </div>
-  
-  <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
-    <div class="user-avatar">
-      {{ getUserInitial() }}
+<nav class="bg-white border-b border-neutral-200 shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo -->
+      <a routerLink="/" class="flex items-center gap-3 hover:opacity-90 transition-opacity group">
+        <div class="w-9 h-9 bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-500 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+          <span class="text-white font-bold text-lg">A</span>
+        </div>
+        <span class="font-bold text-xl text-neutral-900 hidden sm:inline tracking-tight">Academic PM</span>
+      </a>
+
+      <!-- Navigation Links -->
+      <div class="hidden md:flex items-center gap-1">
+        <a 
+          routerLink="/projects"
+          routerLinkActive="text-primary-600 bg-primary-50"
+          [routerLinkActiveOptions]="{ exact: false }"
+          class="px-4 py-2 rounded-lg text-neutral-600 hover:text-primary-600 hover:bg-primary-50 transition-all text-sm font-medium"
+        >
+          Projets
+        </a>
+        <a 
+          routerLink="/dashboard"
+          routerLinkActive="text-primary-600 bg-primary-50"
+          [routerLinkActiveOptions]="{ exact: false }"
+          class="px-4 py-2 rounded-lg text-neutral-600 hover:text-primary-600 hover:bg-primary-50 transition-all text-sm font-medium"
+        >
+          Tableau Kanban
+        </a>
+      </div>
+
+      <!-- Right Side - Notifications & User Menu -->
+      <div class="flex items-center gap-2">
+        <!-- Notification Menu -->
+        <app-notification-menu></app-notification-menu>
+
+        <!-- User Menu -->
+        <div class="relative">
+          <button 
+            (click)="toggleUserMenu()"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
+          >
+            <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm">
+              {{ getUserInitial() }}
+            </div>
+            <span class="text-sm font-medium text-neutral-900 hidden sm:inline">{{ currentUser?.name }}</span>
+            <svg class="w-4 h-4 text-neutral-600 transition-transform" [class.rotate-180]="showUserMenu" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+            </svg>
+          </button>
+
+          <!-- Dropdown Menu -->
+          @if (showUserMenu) {
+            <div class="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-lg border border-neutral-200 overflow-hidden animate-fade-in">
+              <div class="px-4 py-4 bg-gradient-to-r from-primary-50 to-secondary-50 border-b border-neutral-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white font-bold">
+                    {{ getUserInitial() }}
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-neutral-900">{{ currentUser?.name }}</p>
+                    <p class="text-xs text-neutral-600">{{ currentUser?.email }}</p>
+                  </div>
+                </div>
+                <span class="inline-block mt-3 px-2.5 py-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-full text-xs font-medium">
+                  {{ currentUser?.role === 'TEACHER' ? 'Enseignant' : 'Étudiant' }}
+                </span>
+              </div>
+
+              <div class="py-2">
+                <button 
+                  (click)="navigateTo('/profile')"
+                  class="w-full text-left px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-primary-600 transition-colors flex items-center gap-3"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                  </svg>
+                  Profil
+                </button>
+                <button 
+                  (click)="navigateTo('/settings')"
+                  class="w-full text-left px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-primary-600 transition-colors flex items-center gap-3"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                  Paramètres
+                </button>
+              </div>
+
+              <div class="border-t border-neutral-200 py-2">
+                <button 
+                  (click)="logout()"
+                  class="w-full text-left px-4 py-2.5 text-sm text-danger-600 hover:bg-danger-50 transition-colors flex items-center gap-3"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                  </svg>
+                  Déconnexion
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
     </div>
-    <span class="user-name">{{ currentUser?.name }}</span>
-    <mat-icon>arrow_drop_down</mat-icon>
-  </button>
-  
-  <mat-menu #userMenu="matMenu">
-    <div class="user-menu-header">
-      <div class="user-email">{{ currentUser?.email }}</div>
-      <mat-chip [class]="currentUser?.role === 'TEACHER' ? 'role-teacher' : 'role-student'">
-        {{ currentUser?.role === 'TEACHER' ? 'Enseignant' : 'Étudiant' }}
-      </mat-chip>
-    </div>
-    
-    <mat-divider></mat-divider>
-    
-    <button mat-menu-item (click)="navigateTo('/profile')">
-      <mat-icon>person</mat-icon>
-      <span>Mon Profil</span>
-    </button>
-    
-    <button mat-menu-item (click)="navigateTo('/settings')">
-      <mat-icon>settings</mat-icon>
-      <span>Paramètres</span>
-    </button>
-    
-    <mat-divider></mat-divider>
-    
-    <button mat-menu-item (click)="logout()">
-      <mat-icon>logout</mat-icon>
-      <span>Déconnexion</span>
-    </button>
-  </mat-menu>
-</mat-toolbar>
+  </div>
+</nav>

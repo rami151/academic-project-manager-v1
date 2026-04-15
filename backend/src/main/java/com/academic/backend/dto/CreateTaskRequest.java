@@ -8,13 +8,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateTaskRequest {
+
+    private UUID projectId;
 
     @NotBlank(message = "Title is required")
     @Size(min = 3, max = 200, message = "Title must be between 3 and 200 characters")
@@ -25,7 +27,7 @@ public class CreateTaskRequest {
     @NotNull(message = "Priority is required")
     private Priority priority;
 
-    private LocalDateTime dueDate;
+    private LocalDate dueDate;
 
     private Integer estimatedDays;
 

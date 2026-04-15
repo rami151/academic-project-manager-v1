@@ -1,0 +1,39 @@
+<div 
+  class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4 hover:shadow-md hover:border-primary-300 hover:-translate-y-0.5 transition-all cursor-pointer group"
+  (click)="navigateToDetail()"
+  (keydown.enter)="navigateToDetail()"
+  tabindex="0"
+  role="button"
+  [attr.aria-label]="'Tâche: ' + task.title + ', priorité ' + priorityLabel + (isOverdue ? ', en retard' : '')">
+  <div class="flex items-center justify-between mb-3">
+    <span [class]="priorityClass + ' px-2 py-1 rounded text-xs font-semibold'" [attr.aria-label]="'Priorité: ' + priorityLabel">
+      {{ priorityLabel }}
+    </span>
+    @if (task.aiGenerated) {
+      <span class="px-2 py-1 bg-gradient-to-r from-secondary-100 to-secondary-200 text-secondary-700 rounded text-xs font-semibold">IA</span>
+    }
+  </div>
+  
+  <h3 class="text-sm font-semibold text-neutral-900 mb-3 group-hover:text-primary-600 transition-colors">{{ task.title }}</h3>
+  
+  @if (task.dueDate || task.assignedToName) {
+    <div class="flex items-center gap-4 text-xs text-neutral-600">
+      @if (task.dueDate) {
+        <div [class]="isOverdue ? 'text-danger-600' : ''" class="flex items-center gap-1" [attr.aria-label]="isOverdue ? 'Date dépassée' : ''">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>{{ task.dueDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+      }
+      @if (task.assignedToName) {
+        <div class="flex items-center gap-1">
+          <div class="w-5 h-5 bg-gradient-to-br from-primary-400 to-secondary-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+            {{ task.assignedToName.charAt(0).toUpperCase() }}
+          </div>
+          <span>{{ task.assignedToName }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>

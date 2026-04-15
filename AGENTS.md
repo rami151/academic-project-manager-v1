@@ -1,29 +1,30 @@
 # Academic Project Manager
 
 ## Tech Stack
-- **Spring Boot 4.0.4**, **Java 21**, **PostgreSQL** (via Docker Compose)
+- **Spring Boot 4.0.4**, **Java 21**, **PostgreSQL 16** (via Docker Compose)
 - **Flyway** migrations (`backend/src/main/resources/db/migration/`)
 - **Spring Security** + **JWT** (jjwt 0.12.6)
-- **Angular 21** frontend with Vitest for tests
+- **Angular 21** frontend
 - JPA `ddl-auto: validate` — never change to `update`
 
 ## Dev Commands
 
 ```bash
-# Backend
-docker compose up -d                    # Start DB + pgAdmin (http://localhost:5050)
-cd backend && ./mvnw clean spring-boot:run   # Run app
-cd backend && ./mvnw test              # Run all tests
-cd backend && ./mvnw test -Dtest=ClassName    # Run single test class
+# Database (run first)
+docker compose up -d
 
-# Frontend
-cd frontend && npm start               # Dev server at http://localhost:4200
-cd frontend && npm test                 # Vitest tests
+# Backend
+cd backend && ./mvnw clean spring-boot:run
+cd backend && ./mvnw test -Dtest=ClassName
+
+# Frontend (API proxy at localhost:4200/api -> localhost:8080)
+cd frontend && npm start
+cd frontend && npm test
 ```
 
 ## Architecture
-- **DB-first**: Schema defined in Flyway SQL, JPA entities are read-only for enforcement
-- JWT secret hardcoded in `application.yml` — do not commit real secrets
+- **DB-first**: Schema in Flyway SQL, JPA entities are read-only
+- JWT secret hardcoded in `application.yml` — never commit real secrets
 - All tables use UUID primary keys via `gen_random_uuid()` / `pgcrypto`
 - `updated_at` auto-updated via PostgreSQL triggers
 
@@ -33,7 +34,6 @@ cd frontend && npm test                 # Vitest tests
 - **pgAdmin**: http://localhost:5050 (`admin@academic.com` / `admin`)
 
 ## Hibernate Enum Handling
-All enum fields must use `@JdbcTypeCode(SqlTypes.NAMED_ENUM)` for PostgreSQL native enums:
 ```java
 @Enumerated(EnumType.STRING) @JdbcTypeCode(SqlTypes.NAMED_ENUM) @Column(columnDefinition = "role_enum")
 ```

@@ -1,66 +1,114 @@
 @use '@angular/material' as mat;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// Material theme - for components still using Material
+$primary-palette: (
+  50: #f0f7ff,
+  100: #e0ecff,
+  200: #c7d9ff,
+  300: #a3c4ff,
+  400: #7ba8ff,
+  500: #4f7cff,
+  600: #3e5de4,
+  700: #2e42c1,
+  800: #20259f,
+  900: #1a1d7a,
+  contrast: (
+    50: rgba(0, 0, 0, 0.87),
+    100: rgba(0, 0, 0, 0.87),
+    200: rgba(0, 0, 0, 0.87),
+    300: rgba(0, 0, 0, 0.87),
+    400: white,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+  )
+);
+
+$accent-palette: (
+  50: #fef3f2,
+  100: #fce7e5,
+  200: #f8cfcc,
+  300: #f1a9a0,
+  400: #e87962,
+  500: #e24c32,
+  600: #d33920,
+  700: #ac2817,
+  800: #8d2516,
+  900: #761d18,
+  contrast: (
+    50: rgba(0, 0, 0, 0.87),
+    100: rgba(0, 0, 0, 0.87),
+    200: rgba(0, 0, 0, 0.87),
+    300: rgba(0, 0, 0, 0.87),
+    400: white,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+  )
+);
+
+$custom-primary: mat.m2-define-palette($primary-palette, 500, 300, 700);
+$custom-accent: mat.m2-define-palette($accent-palette, 500, 300, 700);
+$custom-warn: mat.m2-define-palette($accent-palette, 500, 300, 700);
 
 html {
-  height: 100%;
   @include mat.theme(
     (
       color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
-      ),
-      typography: Roboto,
-      density: 0,
+        primary: $custom-primary,
+        accent: $custom-accent,
+        warn: $custom-warn,
+      )
     )
   );
 }
 
-body {
-  color-scheme: light;
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
-  margin: 0;
-  height: 100%;
-}
+@layer base {
+  html,
+  body {
+    @apply bg-neutral-50 text-neutral-900 font-sans;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
 
-.snackbar-success {
-  background-color: #4caf50 !important;
-  color: white !important;
-  
-  .mat-mdc-button {
-    color: white !important;
+  a {
+    @apply text-primary-600 hover:text-primary-700 transition-colors;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    @apply font-sans;
   }
 }
 
-.snackbar-error {
-  background-color: #f44336 !important;
-  color: white !important;
-  
-  .mat-mdc-button {
-    color: white !important;
-  }
-}
+/* Utility classes for common patterns */
 
-.snackbar-info {
-  background-color: #2196f3 !important;
-  color: white !important;
-  
-  .mat-mdc-button {
-    color: white !important;
+@keyframes snackbarSlideOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
   }
-}
-
-.snackbar-warning {
-  background-color: #ff9800 !important;
-  color: white !important;
-  
-  .mat-mdc-button {
-    color: white !important;
+  to {
+    transform: translateY(100%);
+    opacity: 0;
   }
 }
 
 * {
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color var(--transition-fast), 
+              color var(--transition-fast),
+              box-shadow var(--transition-fast),
+              transform var(--transition-fast);
 }
 
 ::-webkit-scrollbar {
@@ -86,6 +134,49 @@ body {
   outline-offset: 2px;
 }
 
+[aria-label] {
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+button[mat-icon-button]:focus-visible,
+button[mat-icon-button]:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Blob animations for auth backgrounds */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(20px, -50px) scale(1.1); }
+  50% { transform: translate(-20px, 20px) scale(0.9); }
+  75% { transform: translate(50px, 50px) scale(1.05); }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Fade in animation for dropdowns */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -97,7 +188,181 @@ body {
   }
 }
 
-.project-card,
+@keyframes skeleton-pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: var(--border-radius-sm);
+}
+
+.skeleton-text {
+  height: 16px;
+  margin-bottom: 8px;
+}
+
+.skeleton-title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.skeleton-card {
+  height: 120px;
+  margin-bottom: 16px;
+}
+
+project-card,
 mat-card {
   animation: fadeInUp 0.3s ease-out;
+}
+
+.mat-drawer-backdrop.mat-drawer-shown {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 599px) {
+  .hide-mobile {
+    display: none !important;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+  }
+  
+  .mobile-padding {
+    padding: var(--spacing-sm) !important;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 959px) {
+  .hide-tablet {
+    display: none !important;
+  }
+  
+  .tablet-full-width {
+    width: 100% !important;
+  }
+}
+
+@media (min-width: 960px) {
+  .hide-desktop {
+    display: none !important;
+  }
+  
+  .desktop-only {
+    display: block !important;
+  }
+}
+
+.cdk-drag-preview {
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--border-radius-md);
+  opacity: 0.9;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+  background: var(--color-primary);
+  border-radius: var(--border-radius-md);
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list-dragging .cdk-drag {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.task-list.cdk-drop-list-dragging {
+  transition: transform 250ms ease;
+}
+
+.mat-mdc-tab-group {
+  .mat-mdc-tab-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  }
+  
+  .mat-mdc-tab {
+    min-width: 100px;
+    
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+    }
+  }
+}
+
+.mat-mdc-button, 
+.mat-mdc-raised-button, 
+.mat-mdc-stroked-button {
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.mat-mdc-menu-item {
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+  }
+}
+
+.priority-high {
+  background: #ffcdd2 !important;
+  color: #c62828 !important;
+}
+
+.priority-medium {
+  background: #fff9c4 !important;
+  color: #f57f17 !important;
+}
+
+.priority-low {
+  background: #c8e6c9 !important;
+  color: #2e7d32 !important;
+}
+
+.status-todo {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.status-inprogress {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.status-review {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.status-done {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.overdue {
+  color: var(--color-warn) !important;
+  font-weight: 500;
 }

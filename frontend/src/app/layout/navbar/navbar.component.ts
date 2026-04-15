@@ -1,31 +1,24 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService, User } from '../../core/services/auth.service';
+import { NotificationMenuComponent } from '../../shared/components/notification-menu/notification-menu.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
   imports: [
     CommonModule,
-    MatToolbarModule,
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    MatChipsModule,
-    MatDividerModule
+    RouterLink,
+    RouterLinkActive,
+    NotificationMenuComponent
   ],
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss'
 })
 export class NavbarComponent implements OnInit {
   currentUser: User | null = null;
+  showUserMenu: boolean = false;
 
   constructor(
     private authService: AuthService,
@@ -37,7 +30,7 @@ export class NavbarComponent implements OnInit {
   }
 
   logout(): void {
-    if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+    if (confirm('Are you sure you want to logout?')) {
       this.authService.logout();
       this.router.navigate(['/auth/login']);
     }
@@ -45,6 +38,11 @@ export class NavbarComponent implements OnInit {
 
   navigateTo(route: string): void {
     this.router.navigate([route]);
+    this.showUserMenu = false;
+  }
+
+  toggleUserMenu(): void {
+    this.showUserMenu = !this.showUserMenu;
   }
 
   getUserInitial(): string {

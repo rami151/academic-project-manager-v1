@@ -1,13 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ProjectService, Project } from '../../core/services/project.service';
 import { ProjectCreateDialogComponent } from '../project-create-dialog/project-create-dialog.component';
 
@@ -16,13 +9,7 @@ import { ProjectCreateDialogComponent } from '../project-create-dialog/project-c
   standalone: true,
   imports: [
     CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressBarModule,
-    MatChipsModule,
-    MatProgressSpinnerModule,
-    MatDialogModule
+    ProjectCreateDialogComponent
   ],
   templateUrl: './project-list.html',
   styleUrl: './project-list.scss'
@@ -31,11 +18,11 @@ export class ProjectListComponent implements OnInit {
   projects: Project[] = [];
   isLoading = true;
   errorMessage = '';
+  showCreateDialog = false;
 
   constructor(
     private projectService: ProjectService,
     private router: Router,
-    private dialog: MatDialog,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -62,16 +49,15 @@ export class ProjectListComponent implements OnInit {
   }
 
   openCreateDialog(): void {
-    const dialogRef = this.dialog.open(ProjectCreateDialogComponent, {
-      width: '600px',
-      disableClose: true
-    });
+    this.showCreateDialog = true;
+  }
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.loadProjects();
-      }
-    });
+  onDialogClose(result: boolean | Event): void {
+    this.showCreateDialog = false;
+    const isSuccess = typeof result === 'boolean' ? result : false;
+    if (isSuccess) {
+      this.loadProjects();
+    }
   }
 
   navigateToDetail(projectId: string): void {
@@ -87,6 +73,6 @@ export class ProjectListComponent implements OnInit {
 
   formatDeadline(deadline: string): string {
     const date = new Date(deadline);
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 }

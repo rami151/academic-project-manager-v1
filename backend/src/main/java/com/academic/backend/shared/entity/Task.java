@@ -9,7 +9,10 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -55,7 +58,7 @@ public class Task {
     @Builder.Default
     private Priority priority = Priority.MEDIUM;
 
-    private LocalDateTime dueDate;
+    private LocalDate dueDate;
 
     private Integer estimatedDays;
 
@@ -74,4 +77,20 @@ public class Task {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @ManyToMany
+    @JoinTable(
+        name = "task_labels",
+        joinColumns = @JoinColumn(name = "task_id"),
+        inverseJoinColumns = @JoinColumn(name = "label_id")
+    )
+    @Builder.Default
+    private Set<Label> labels = new HashSet<>();
+
+    public boolean isOverdue() {
+        if (dueDate == null || status == TaskStatus.DONE) {
+            return false;
+        }
+        return LocalDate.now().isAfter(dueDate);
+    }
 }

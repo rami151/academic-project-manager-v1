@@ -2,12 +2,6 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
 import { AuthService, RegisterRequest } from '../../core/services/auth.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
 
@@ -17,13 +11,7 @@ import { SnackbarService } from '../../core/services/snackbar.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterLink,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatProgressSpinnerModule,
-    MatSelectModule
+    RouterLink
   ],
   templateUrl: './register.html',
   styleUrl: './register.scss'
@@ -33,9 +21,10 @@ export class RegisterComponent {
   isLoading = false;
   errorMessage = '';
   successMessage = '';
+  showPassword = false;
   roles = [
-    { value: 'STUDENT', label: 'Étudiant' },
-    { value: 'TEACHER', label: 'Enseignant' }
+    { value: 'STUDENT', label: 'Student' },
+    { value: 'TEACHER', label: 'Teacher' }
   ];
 
   constructor(
@@ -48,7 +37,7 @@ export class RegisterComponent {
       name: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      role: ['', Validators.required]
+      role: ['STUDENT', Validators.required]
     });
   }
 
@@ -63,18 +52,55 @@ export class RegisterComponent {
 
     this.authService.register(this.registerForm.value as RegisterRequest).subscribe({
       next: () => {
-        this.successMessage = 'Inscription réussie! Redirection vers la page de connexion...';
-        this.snackbarService.success('Compte créé avec succès ! Vous pouvez vous connecter.');
+        this.successMessage = 'Successfully registered! Redirecting to login...';
+        this.snackbarService.success('Account created successfully!');
         this.isLoading = false;
         setTimeout(() => {
           this.router.navigate(['/auth/login']);
         }, 2000);
       },
       error: (error) => {
-        this.errorMessage = error.message || 'Impossible de créer le compte';
-        this.snackbarService.error('Impossible de créer le compte');
+        this.errorMessage = error.message || 'Failed to create account';
+        this.snackbarService.error('Failed to create account');
         this.isLoading = false;
       }
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  getNameError(): string {
+    const control = this.registerForm.get('name');
+    if (control?.hasError('required')) {
+      return 'Name is required';
+    }
+    if (control?.hasError('minlength')) {
+      return 'Name must be at least 3 characters';
+    }
+    return '';
+  }
+
+  getEmailError(): string {
+    const control = this.registerForm.get('email');
+    if (control?.hasError('required')) {
+      return 'Email is required';
+    }
+    if (control?.hasError('email')) {
+      return 'Invalid email address';
+    }
+    return '';
+  }
+
+  getPasswordError(): string {
+    const control = this.registerForm.get('password');
+    if (control?.hasError('required')) {
+      return 'Password is required';
+    }
+    if (control?.hasError('minlength')) {
+      return 'Password must be at least 6 characters';
+    }
+    return '';
   }
 }

@@ -1,0 +1,83 @@
+<div class="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 p-6">
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-neutral-900">Tableau Kanban</h1>
+      <p class="text-neutral-600 mt-1">Drag & drop pour organiser vos tâches</p>
+    </div>
+    <button (click)="openAiGeneration()" class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-secondary-500 to-secondary-600 text-white rounded-lg font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all transform">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+      </svg>
+      <span class="hidden sm:inline">Générer avec IA</span>
+    </button>
+  </div>
+
+  <!-- Kanban Columns -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6" role="region" aria-label="Tableau Kanban">
+    @for (column of columns; track column.status) {
+      <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden" role="listbox" [attr.aria-label]="column.name + ' - ' + column.tasks.length + ' tâches'">
+        <!-- Column Header -->
+        <div class="px-4 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <span class="w-2.5 h-2.5 rounded-full" 
+              [class]="column.status === 'TODO' ? 'bg-neutral-400' : column.status === 'IN_PROGRESS' ? 'bg-primary-500 animate-pulse' : 'bg-success-500'">
+            </span>
+            <h2 class="text-base font-bold text-neutral-900">{{ column.name }}</h2>
+            <span class="px-2 py-0.5 bg-neutral-200 text-neutral-600 text-xs font-medium rounded-full">{{ column.tasks.length }}</span>
+          </div>
+          <button (click)="openTaskForm(column.status)" class="p-2 hover:bg-neutral-200 rounded-lg transition-colors" [attr.aria-label]="'Ajouter une tâche dans ' + column.name">
+            <svg class="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Task List -->
+        <div
+          cdkDropList
+          [cdkDropListData]="column.tasks"
+          (cdkDropListDropped)="onDrop($event)"
+          class="p-4 space-y-3 min-h-80"
+          role="list"
+          [attr.aria-label]="'Tâches dans ' + column.name"
+        >
+          @for (task of column.tasks; track task.id) {
+            <div
+              cdkDrag
+              [cdkDragData]="task"
+              class="cursor-move"
+              role="option"
+              [attr.aria-label]="'Tâche: ' + task.title"
+              tabindex="0"
+            >
+              <app-task-card [task]="task"></app-task-card>
+            </div>
+          }
+          
+          @if (column.tasks.length === 0) {
+            <div class="text-center py-12 text-neutral-400" role="status">
+              <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+              <p class="text-sm">Aucune tâche</p>
+              <button (click)="openTaskForm(column.status)" class="mt-2 text-primary-600 hover:text-primary-700 text-sm font-medium">
+                + Ajouter une tâche
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Loading Overlay -->
+  @if (loading) {
+    <div class="fixed inset-0 bg-white/80 flex items-center justify-center z-50" role="status" aria-label="Chargement des tâches">
+      <div class="text-center">
+        <div class="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4"></div>
+        <p class="text-neutral-600">Chargement des tâches...</p>
+      </div>
+    </div>
+  }
+</div>

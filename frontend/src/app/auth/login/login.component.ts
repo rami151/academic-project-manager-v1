@@ -2,11 +2,6 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/services/auth.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
 
@@ -16,12 +11,7 @@ import { SnackbarService } from '../../core/services/snackbar.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterLink,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatProgressSpinnerModule
+    RouterLink
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss'
@@ -30,6 +20,7 @@ export class LoginComponent {
   loginForm: FormGroup;
   isLoading = false;
   errorMessage = '';
+  showPassword = false;
 
   constructor(
     private fb: FormBuilder,
@@ -55,14 +46,37 @@ export class LoginComponent {
       next: (response) => {
         localStorage.setItem('jwt_token', response.token);
         localStorage.setItem('current_user', JSON.stringify(response.user));
-        this.snackbarService.success('Connexion réussie !');
+        this.snackbarService.success('Login successful!');
         this.router.navigate(['/projects']);
       },
       error: (error) => {
-        this.errorMessage = error.message || 'Email ou mot de passe incorrect';
-        this.snackbarService.error('Email ou mot de passe incorrect');
+        this.errorMessage = error.message || 'Invalid email or password';
+        this.snackbarService.error('Invalid email or password');
         this.isLoading = false;
       }
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  getEmailError(): string {
+    const control = this.loginForm.get('email');
+    if (control?.hasError('required')) {
+      return 'Email is required';
+    }
+    if (control?.hasError('email')) {
+      return 'Invalid email address';
+    }
+    return '';
+  }
+
+  getPasswordError(): string {
+    const control = this.loginForm.get('password');
+    if (control?.hasError('required')) {
+      return 'Password is required';
+    }
+    return '';
   }
 }

@@ -1,47 +1,92 @@
-<h2 mat-dialog-title>Créer un Projet</h2>
-<mat-dialog-content>
-  <form [formGroup]="projectForm" (ngSubmit)="onSubmit()">
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Nom du projet</mat-label>
-      <input matInput formControlName="name" />
-      <mat-hint align="end">{{ projectForm.get('name')?.value?.length || 0 }} / 100</mat-hint>
-      <mat-error *ngIf="projectForm.get('name')?.hasError('required')">Nom requis</mat-error>
-      <mat-error *ngIf="projectForm.get('name')?.hasError('minlength')">Minimum 3 caractères</mat-error>
-      <mat-error *ngIf="projectForm.get('name')?.hasError('maxlength')">Maximum 100 caractères</mat-error>
-    </mat-form-field>
+<div class="p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-bold text-neutral-900">Créer un Projet</h2>
+    <button (click)="onCancel()" class="p-2 hover:bg-neutral-100 rounded-lg transition-colors">
+      <svg class="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Description</mat-label>
-      <textarea matInput formControlName="description" rows="4"></textarea>
-      <mat-hint align="end">{{ projectForm.get('description')?.value?.length || 0 }} / 500</mat-hint>
-      <mat-error *ngIf="projectForm.get('description')?.hasError('required')">Description requise</mat-error>
-      <mat-error *ngIf="projectForm.get('description')?.hasError('minlength')">Minimum 10 caractères</mat-error>
-      <mat-error *ngIf="projectForm.get('description')?.hasError('maxlength')">Maximum 500 caractères</mat-error>
-    </mat-form-field>
+  <form (ngSubmit)="onSubmit()" class="space-y-4">
+    <!-- Name -->
+    <div>
+      <label class="block text-sm font-medium text-neutral-900 mb-2">Nom du projet</label>
+      <input 
+        type="text" 
+        [(ngModel)]="formData.name" 
+        name="name"
+        maxlength="100"
+        class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+        [class.border-danger-500]="formErrors.name"
+      />
+      <div class="flex justify-between mt-1">
+        @if (formErrors.name) {
+          <p class="text-danger-600 text-sm">{{ formErrors.name }}</p>
+        }
+        <p class="text-xs text-neutral-500 ml-auto">{{ formData.name.length || 0 }} / 100</p>
+      </div>
+    </div>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Date limite</mat-label>
-      <input matInput [matDatepicker]="picker" formControlName="deadline" />
-      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
-      <mat-error *ngIf="projectForm.get('deadline')?.hasError('required')">Date limite requise</mat-error>
-      <mat-error *ngIf="projectForm.get('deadline')?.hasError('pastDate')">La date doit être future</mat-error>
-    </mat-form-field>
+    <!-- Description -->
+    <div>
+      <label class="block text-sm font-medium text-neutral-900 mb-2">Description</label>
+      <textarea 
+        [(ngModel)]="formData.description" 
+        name="description"
+        rows="4"
+        maxlength="500"
+        class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+        [class.border-danger-500]="formErrors.description"
+      ></textarea>
+      <div class="flex justify-between mt-1">
+        @if (formErrors.description) {
+          <p class="text-danger-600 text-sm">{{ formErrors.description }}</p>
+        }
+        <p class="text-xs text-neutral-500 ml-auto">{{ formData.description.length || 0 }} / 500</p>
+      </div>
+    </div>
 
-    <div class="error-message" *ngIf="errorMessage">
-      {{ errorMessage }}
+    <!-- Deadline -->
+    <div>
+      <label class="block text-sm font-medium text-neutral-900 mb-2">Date limite</label>
+      <input 
+        type="date" 
+        [(ngModel)]="formData.deadline" 
+        name="deadline"
+        class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+        [class.border-danger-500]="formErrors.deadline"
+      />
+      @if (formErrors.deadline) {
+        <p class="text-danger-600 text-sm mt-1">{{ formErrors.deadline }}</p>
+      }
+    </div>
+
+    @if (errorMessage) {
+      <div class="bg-danger-50 border border-danger-200 rounded-lg p-4 text-danger-700 text-sm">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-3 pt-4">
+      <button 
+        type="button" 
+        (click)="onCancel()"
+        class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors"
+      >
+        Annuler
+      </button>
+      <button 
+        type="submit"
+        [disabled]="isSubmitting || !formData.name || !formData.description || !formData.deadline"
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      >
+        @if (isSubmitting) {
+          <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        }
+        <span>{{ isSubmitting ? 'Création...' : 'Créer' }}</span>
+      </button>
     </div>
   </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button (click)="onCancel()">Annuler</button>
-  <button 
-    mat-raised-button 
-    color="primary" 
-    (click)="onSubmit()" 
-    [disabled]="isSubmitting || projectForm.invalid"
-  >
-    <mat-spinner diameter="20" *ngIf="isSubmitting"></mat-spinner>
-    <span *ngIf="!isSubmitting">Créer</span>
-  </button>
-</mat-dialog-actions>
+</div>

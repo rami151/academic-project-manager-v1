@@ -9,6 +9,8 @@ import com.academic.backend.shared.entity.ProjectMember;
 import com.academic.backend.shared.entity.User;
 import com.academic.backend.shared.enums.Permission;
 import com.academic.backend.shared.enums.ProjectStatus;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,6 +69,7 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "projects", key = "#projectId")
     public ProjectResponse getProjectById(UUID projectId, UUID currentUserId) {
         authorizationService.requirePermission(projectId, currentUserId, Permission.VIEWER);
 
@@ -76,6 +79,7 @@ public class ProjectService {
         return new ProjectResponse(project);
     }
 
+    @CacheEvict(value = "projects", key = "#projectId")
     public ProjectResponse updateProject(UUID projectId, UpdateProjectRequest request, UUID currentUserId) {
         authorizationService.requirePermission(projectId, currentUserId, Permission.OWNER);
 
@@ -104,6 +108,7 @@ public class ProjectService {
         projectRepository.deleteById(projectId);
     }
 
+    @CacheEvict(value = "projects", allEntries = true)
     public ProjectMemberResponse addMember(UUID projectId, String memberEmail, Permission permission, UUID currentUserId) {
         authorizationService.requirePermission(projectId, currentUserId, Permission.OWNER);
 
