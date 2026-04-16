@@ -56,6 +56,9 @@ export class AuthService {
   }
 
   getCurrentUser(): User | null {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return null;
+
     const userStr = localStorage.getItem('current_user');
     if (userStr && userStr !== 'undefined') {
       try {
@@ -64,10 +67,7 @@ export class AuthService {
         return null;
       }
     }
-    
-    const token = localStorage.getItem('jwt_token');
-    if (!token) return null;
-    
+
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       return {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { CdkDragDrop, moveItemInArray, transferArrayItem, DragDropModule } from '@angular/cdk/drag-drop';
@@ -39,32 +39,38 @@ export class KanbanBoardComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private taskService: TaskService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.projectId = this.route.snapshot.paramMap.get('projectId') || '';
-    console.log('KanbanBoardComponent - projectId from route:', this.projectId);
-    if (!this.projectId) {
-      console.error('KanbanBoardComponent - projectId is empty!');
+    if (this.projectId) {
+      this.loadTasks();
     }
-    this.loadTasks();
   }
 
   loadTasks(): void {
     this.loading = true;
-    console.log('Loading tasks for projectId:', this.projectId);
+    this.cdr.detectChanges();
+
     this.taskService.getProjectTasks(this.projectId).subscribe({
       next: (tasksMap) => {
-        console.log('Tasks received:', tasksMap);
-        this.columns[0].tasks = tasksMap['TODO'] || [];
-        this.columns[1].tasks = tasksMap['IN_PROGRESS'] || [];
-        this.columns[2].tasks = tasksMap['DONE'] || [];
-        this.loading = false;
+        // Use setTimeout to avoid NG0100 and ensure UI updates
+        setTimeout(() => {
+          this.columns[0].tasks = tasksMap['TODO'] || [];
+          this.columns[1].tasks = tasksMap['IN_PROGRESS'] || [];
+          this.columns[2].tasks = tasksMap['DONE'] || [];
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       },
       error: (error) => {
         console.error('Error loading tasks:', error);
-        this.loading = false;
+        setTimeout(() => {
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       }
     });
   }

@@ -9,27 +9,10 @@
         <span class="font-bold text-xl text-neutral-900 hidden sm:inline tracking-tight">Academic PM</span>
       </a>
 
-      <!-- Navigation Links -->
-      <div class="hidden md:flex items-center gap-1">
-        <a 
-          routerLink="/projects"
-          routerLinkActive="text-primary-600 bg-primary-50"
-          [routerLinkActiveOptions]="{ exact: false }"
-          class="px-4 py-2 rounded-lg text-neutral-600 hover:text-primary-600 hover:bg-primary-50 transition-all text-sm font-medium"
-        >
-          Projets
-        </a>
-        <a 
-          routerLink="/dashboard"
-          routerLinkActive="text-primary-600 bg-primary-50"
-          [routerLinkActiveOptions]="{ exact: false }"
-          class="px-4 py-2 rounded-lg text-neutral-600 hover:text-primary-600 hover:bg-primary-50 transition-all text-sm font-medium"
-        >
-          Tableau Kanban
-        </a>
-      </div>
 
-      <!-- Right Side - Notifications & User Menu -->
+
+      <!-- Right Side - Notifications & User Menu CTA -->
+      @if (currentUser) {
       <div class="flex items-center gap-2">
         <!-- Notification Menu -->
         <app-notification-menu></app-notification-menu>
@@ -43,7 +26,7 @@
             <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm">
               {{ getUserInitial() }}
             </div>
-            <span class="text-sm font-medium text-neutral-900 hidden sm:inline">{{ currentUser?.name }}</span>
+            <span class="text-sm font-medium text-neutral-900 hidden sm:inline">{{ currentUser.name }}</span>
             <svg class="w-4 h-4 text-neutral-600 transition-transform" [class.rotate-180]="showUserMenu" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
             </svg>
@@ -58,12 +41,12 @@
                     {{ getUserInitial() }}
                   </div>
                   <div>
-                    <p class="text-sm font-semibold text-neutral-900">{{ currentUser?.name }}</p>
-                    <p class="text-xs text-neutral-600">{{ currentUser?.email }}</p>
+                    <p class="text-sm font-semibold text-neutral-900">{{ currentUser.name }}</p>
+                    <p class="text-xs text-neutral-600">{{ currentUser.email }}</p>
                   </div>
                 </div>
                 <span class="inline-block mt-3 px-2.5 py-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-full text-xs font-medium">
-                  {{ currentUser?.role === 'TEACHER' ? 'Enseignant' : 'Étudiant' }}
+                  {{ currentUser.role === 'TEACHER' ? 'Enseignant' : 'Étudiant' }}
                 </span>
               </div>
 
@@ -104,6 +87,17 @@
           }
         </div>
       </div>
+      } @else {
+        <!-- CTA Button -->
+        <div class="flex items-center gap-4">
+          <a routerLink="/auth/login" class="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg text-sm font-medium transition-colors">
+            Login
+          </a>
+          <a routerLink="/auth/register" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+            Get Started
+          </a>
+        </div>
+      }
     </div>
   </div>
 </nav>

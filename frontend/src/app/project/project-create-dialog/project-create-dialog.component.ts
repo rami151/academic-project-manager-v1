@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -33,6 +33,7 @@ export class ProjectCreateDialogComponent {
     private projectService: ProjectService,
     private snackbarService: SnackbarService,
     private dialogRef: MatDialogRef<ProjectCreateDialogComponent>,
+    private cdr: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA) public data: { project?: Project }
   ) {}
 
@@ -69,7 +70,7 @@ export class ProjectCreateDialogComponent {
     this.projectService.createProject({
       name: this.formData.name,
       description: this.formData.description,
-      deadline: this.formData.deadline
+      deadline: this.formData.deadline.includes('T') ? this.formData.deadline : this.formData.deadline + 'T23:59:59'
     }).subscribe({
       next: (newProject) => {
         this.snackbarService.success('Projet créé avec succès !');
@@ -79,6 +80,7 @@ export class ProjectCreateDialogComponent {
         this.errorMessage = error.message || 'Impossible de créer le projet';
         this.snackbarService.error('Impossible de créer le projet');
         this.isSubmitting = false;
+        this.cdr.detectChanges();
       }
     });
   }

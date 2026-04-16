@@ -62,16 +62,22 @@ export class ProjectDetailComponent implements OnInit {
 
   loadProjectDetails(projectId: string): void {
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     this.projectService.getProjectById(projectId).subscribe({
       next: (project) => {
-        this.project = project;
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.project = project;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        });
       },
       error: (error) => {
-        this.errorMessage = error.message || 'Failed to load project';
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.errorMessage = error.message || 'Failed to load project';
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        });
       }
     });
   }
@@ -79,13 +85,17 @@ export class ProjectDetailComponent implements OnInit {
   loadMembers(projectId: string): void {
     this.projectService.getProjectMembers(projectId).subscribe({
       next: (members) => {
-        this.members = members;
-        this.calculateCurrentUserPermission();
-        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.members = members;
+          this.calculateCurrentUserPermission();
+          this.cdr.detectChanges();
+        });
       },
       error: () => {
-        this.members = [];
-        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.members = [];
+          this.cdr.detectChanges();
+        });
       }
     });
   }

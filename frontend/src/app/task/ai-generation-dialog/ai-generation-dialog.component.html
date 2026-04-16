@@ -1,63 +1,76 @@
-<div class="p-6">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-bold text-neutral-900">Générer des tâches avec IA</h2>
-    <button (click)="onCancel()" class="p-2 hover:bg-neutral-100 rounded-lg transition-colors">
-      <svg class="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="p-8 bg-gradient-to-br from-neutral-50 to-neutral-100 rounded-3xl border border-neutral-200 shadow-2xl overflow-hidden relative max-w-lg mx-auto">
+  <!-- Decorative Background Blobs -->
+  <div class="absolute -top-32 -right-32 w-80 h-80 bg-primary-200/40 rounded-full blur-[80px] z-[-10]"></div>
+  <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-secondary-200/40 rounded-full blur-[80px] z-[-10]"></div>
+
+  <div class="flex justify-between items-start mb-8">
+    <div class="space-y-1">
+      <h2 class="text-2xl font-bold text-neutral-900 flex items-center gap-2">
+        <svg class="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Générer avec l'IA
+      </h2>
+      <p class="text-neutral-600 text-sm">Décrivez votre projet et laissez l'IA organiser vos tâches</p>
+    </div>
+    <button (click)="onCancel()" class="p-2 hover:bg-white/50 rounded-xl transition-all hover:rotate-90">
+      <svg class="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
       </svg>
     </button>
   </div>
 
-  <p class="text-neutral-600 mb-4">
-    Décrivez votre projet en quelques phrases. L'IA générera des tâches détaillées et réalistes.
-  </p>
-
-  <form (ngSubmit)="generate()" class="space-y-4">
+  <form (ngSubmit)="generate()" class="space-y-6">
     <div>
-      <label class="block text-sm font-medium text-neutral-900 mb-2">Description du projet</label>
+      <label class="block text-sm font-semibold text-neutral-700 mb-3 ml-1">De quoi parle votre projet ?</label>
       <textarea 
         [(ngModel)]="description" 
         name="description"
         rows="5"
-        placeholder="Décrivez votre projet en détail..."
-        class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+        placeholder="Ex: Un projet de développement web utilisant Angular et Spring Boot. Nous devons implémenter l'authentification, le CRUD des utilisateurs et un tableau de bord..."
+        class="w-full px-5 py-4 bg-white/60 backdrop-blur-md border border-neutral-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all shadow-inner hover:bg-white resize-none text-neutral-800 placeholder-neutral-400"
         [class.border-danger-500]="formErrors.description"
       ></textarea>
-      <p class="text-xs text-neutral-500 mt-1">Minimum 20 caractères</p>
-      @if (formErrors.description) {
-        <p class="text-danger-600 text-sm mt-1">{{ formErrors.description }}</p>
-      }
+      <div class="flex justify-between mt-2 px-1">
+        @if (formErrors.description) {
+          <p class="text-danger-600 text-xs flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            {{ formErrors.description }}
+          </p>
+        }
+        <p class="text-[10px] font-medium text-neutral-400 ml-auto italic">Minimum 20 caractères</p>
+      </div>
     </div>
 
     @if (error) {
-      <div class="bg-danger-50 border border-danger-200 rounded-lg p-4 text-danger-700 text-sm">
-        {{ error }}
+      <div class="bg-danger-50 border border-danger-200 rounded-xl p-4 text-danger-700 text-xs flex items-center gap-3 animate-shake">
+        <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+        <span>{{ error }}</span>
       </div>
     }
 
-    <div class="flex justify-end gap-3 pt-4">
+    <!-- Actions -->
+    <div class="flex flex-col gap-3 pt-4">
+      <button 
+        type="submit"
+        [disabled]="loading || description.length < 20"
+        class="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-bold rounded-2xl hover:shadow-xl hover:shadow-primary-100 hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group"
+      >
+        @if (loading) {
+          <div class="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+          <span>Analyse en cours...</span>
+        } @else {
+          <svg class="w-5 h-5 group-hover:animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <span>Générer mes tâches</span>
+        }
+      </button>
       <button 
         type="button" 
         (click)="onCancel()"
-        class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors"
+        class="w-full py-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800 transition-colors"
       >
-        Annuler
-      </button>
-      <button 
-        type="button"
-        [disabled]="loading || description.length < 20"
-        (click)="generate()"
-        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-      >
-        @if (loading) {
-          <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        } @else {
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-          </svg>
-        }
-        <span>{{ loading ? 'Génération...' : 'Générer avec IA' }}</span>
+        Peut-être plus tard
       </button>
     </div>
   </form>
-</div>
+</div>

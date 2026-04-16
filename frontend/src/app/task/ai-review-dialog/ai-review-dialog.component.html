@@ -1,114 +1,152 @@
-<div class="p-6">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-bold text-neutral-900">Réviser les tâches générées</h2>
-    <button (click)="onCancel()" class="p-2 hover:bg-neutral-100 rounded-lg transition-colors">
-      <svg class="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-      </svg>
-    </button>
+<div class="p-0 bg-gradient-to-br from-neutral-50 to-neutral-100 rounded-3xl border border-neutral-200 shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]">
+  <!-- Decorative Background Blobs -->
+  <div class="absolute -top-32 -right-32 w-80 h-80 bg-primary-100/30 rounded-full blur-[80px] z-[-10]"></div>
+  <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-secondary-100/30 rounded-full blur-[80px] z-[-10]"></div>
+
+  <!-- Header -->
+  <div class="p-6 border-b border-neutral-200/60 bg-white/40 backdrop-blur-md sticky top-0 z-20">
+    <div class="flex justify-between items-center">
+      <div class="space-y-1">
+        <h2 class="text-2xl font-bold text-neutral-900 flex items-center gap-3">
+          <div class="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center shadow-lg shadow-primary-100">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          </div>
+          Réviser les suggestions
+        </h2>
+        <p class="text-neutral-500 text-sm">Ajustez les tâches générées par l'IA avant de les importer</p>
+      </div>
+      <button (click)="onCancel()" class="p-2 hover:bg-white rounded-xl transition-all hover:rotate-90 shadow-sm border border-transparent hover:border-neutral-200">
+        <svg class="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
   </div>
 
-  @if (loading) {
-    <div class="flex flex-col items-center justify-center py-12">
-      <div class="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mb-4"></div>
-      <p class="text-neutral-600">Chargement des tâches...</p>
-    </div>
-  }
-
-  @if (!loading) {
-    <!-- Actions Bar -->
-    <div class="flex items-center justify-between mb-4">
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input 
-          type="checkbox" 
-          [checked]="allSelected" 
-          (change)="toggleAll()"
-          class="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-        />
-        <span class="text-sm text-neutral-700">Tout sélectionner</span>
-      </label>
-      <span class="text-sm text-neutral-600">{{ tasks.length }} tâches</span>
-    </div>
-
-    <!-- Task List -->
-    <div class="space-y-3 max-h-96 overflow-y-auto mb-4">
-      @for (task of tasks; track $index) {
-        <div class="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-          <div class="cursor-move text-neutral-400 hover:text-neutral-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/>
-            </svg>
-          </div>
-          
-          <input 
-            type="checkbox" 
-            [(ngModel)]="task.selected"
-            class="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-          />
-          
-          <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
-            <input 
-              type="text" 
-              [(ngModel)]="task.title" 
-              placeholder="Titre"
-              class="px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            
-            <select 
-              [(ngModel)]="task.priority"
-              class="px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-            >
-              <option value="HIGH">Haute</option>
-              <option value="MEDIUM">Moyenne</option>
-              <option value="LOW">Basse</option>
-            </select>
-            
-            <div class="flex items-center gap-2">
-              <input 
-                type="number" 
-                [(ngModel)]="task.estimatedDays" 
-                min="1"
-                class="w-20 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-              <span class="text-sm text-neutral-600">jours</span>
-            </div>
-          </div>
-
-          <button (click)="removeTask($index)" class="p-2 text-neutral-400 hover:text-danger-600 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-            </svg>
-          </button>
+  <!-- Body -->
+  <div class="flex-1 overflow-y-auto p-6 space-y-6">
+    @if (loading) {
+      <div class="flex flex-col items-center justify-center py-20 bg-white/40 backdrop-blur-sm rounded-3xl border border-dashed border-neutral-300">
+        <div class="relative w-16 h-16 mb-6">
+          <div class="absolute inset-0 border-4 border-primary-100 rounded-full"></div>
+          <div class="absolute inset-0 border-4 border-primary-500 rounded-full animate-spin border-t-transparent"></div>
         </div>
-      }
-    </div>
-
-    @if (error) {
-      <div class="bg-danger-50 border border-danger-200 rounded-lg p-4 text-danger-700 text-sm mb-4">
-        {{ error }}
+        <p class="text-neutral-900 font-bold text-lg animate-pulse">L'IA peaufine vos tâches...</p>
+        <p class="text-neutral-500 text-sm mt-2">Cela ne prendra que quelques secondes</p>
       </div>
     }
 
-    <!-- Actions -->
-    <div class="flex justify-end gap-3 pt-4">
+    @if (!loading) {
+      <!-- Control Bar -->
+      <div class="flex items-center justify-between bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-neutral-200 shadow-sm">
+        <label class="flex items-center gap-3 cursor-pointer group">
+          <div class="relative w-5 h-5">
+            <input 
+              type="checkbox" 
+              [checked]="allSelected" 
+              (change)="toggleAll()"
+              class="peer absolute inset-0 opacity-0 cursor-pointer z-10"
+            />
+            <div class="absolute inset-0 bg-white border-2 border-neutral-300 rounded-md transition-all peer-checked:bg-primary-500 peer-checked:border-primary-500 group-hover:border-primary-400 ring-offset-2 peer-focus:ring-2 ring-primary-500/50"></div>
+            <svg class="absolute inset-0 w-5 h-5 text-white scale-0 transition-transform peer-checked:scale-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <span class="text-sm font-bold text-neutral-700">Sélectionner tout</span>
+        </label>
+        <div class="px-4 py-1.5 bg-neutral-900 text-white rounded-full text-xs font-bold shadow-lg shadow-neutral-200">
+          {{ tasks.length }} tâches détectées
+        </div>
+      </div>
+
+      <!-- Task Items -->
+      <div class="space-y-4">
+        @for (task of tasks; track $index) {
+          <div 
+            class="group bg-white/50 backdrop-blur-sm p-5 rounded-2xl border transition-all hover:bg-white hover:shadow-xl hover:shadow-neutral-200 hover:-translate-y-0.5"
+            [class]="task.selected ? 'border-primary-200' : 'border-neutral-200 opacity-60'"
+          >
+            <div class="flex items-start gap-4">
+              <div class="pt-3">
+                <div class="relative w-5 h-5">
+                  <input 
+                    type="checkbox" 
+                    [(ngModel)]="task.selected"
+                    class="peer absolute inset-0 opacity-0 cursor-pointer z-10"
+                  />
+                  <div class="absolute inset-0 bg-white border-2 border-neutral-300 rounded-md transition-all peer-checked:bg-primary-500 peer-checked:border-primary-500 ring-offset-2 peer-focus:ring-2 ring-primary-500/50"></div>
+                  <svg class="absolute inset-0 w-5 h-5 text-white scale-0 transition-transform peer-checked:scale-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                </div>
+              </div>
+
+              <div class="flex-1 space-y-4">
+                <div class="flex gap-4 items-start">
+                  <div class="flex-1">
+                    <input 
+                      type="text" 
+                      [(ngModel)]="task.title" 
+                      class="w-full bg-transparent text-lg font-bold text-neutral-900 border-b border-transparent focus:border-primary-500 outline-none transition-all placeholder-neutral-300"
+                      placeholder="Titre de la tâche"
+                    />
+                  </div>
+                  <button (click)="removeTask($index)" class="p-2 text-neutral-400 hover:text-danger-500 hover:bg-danger-50 rounded-xl transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-4">
+                  <div class="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 rounded-xl border border-neutral-200">
+                    <svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <select [(ngModel)]="task.priority" class="bg-transparent text-xs font-bold text-neutral-700 outline-none cursor-pointer">
+                      <option value="HIGH">Priorité Haute</option>
+                      <option value="MEDIUM">Priorité Moyenne</option>
+                      <option value="LOW">Priorité Basse</option>
+                    </select>
+                  </div>
+
+                  <div class="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 rounded-xl border border-neutral-200">
+                    <svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <div class="flex items-center gap-1">
+                      <input type="number" [(ngModel)]="task.estimatedDays" min="1" class="w-8 bg-transparent text-xs font-bold text-neutral-700 outline-none focus:text-primary-600" />
+                      <span class="text-[10px] font-bold text-neutral-500 uppercase">jours</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    @if (error) {
+      <div class="bg-danger-50 border border-danger-200 rounded-2xl p-4 text-danger-700 text-sm flex items-center gap-3 animate-shake">
+        <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+        <span>{{ error }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- Footer -->
+  <div class="p-6 border-t border-neutral-200/60 bg-white/40 backdrop-blur-md sticky bottom-0 z-20">
+    <div class="flex justify-end gap-3">
       <button 
         type="button" 
         (click)="onCancel()"
-        class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors"
+        class="px-6 py-3 text-sm font-bold text-neutral-500 hover:text-neutral-900 transition-colors"
       >
-        Fermer
+        Annuler
       </button>
       <button 
         type="button"
-        [disabled]="importing || tasks.length === 0"
+        [disabled]="importing || tasks.length === 0 || !allSelected && tasks.every(t => !t.selected)"
         (click)="importSelected()"
-        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        class="px-10 py-3 bg-neutral-900 text-white text-sm font-bold rounded-2xl hover:bg-neutral-800 hover:shadow-xl hover:shadow-neutral-200 active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
       >
         @if (importing) {
-          <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          <span>Importation...</span>
+        } @else {
+          <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+          <span>Importer la sélection</span>
         }
-        <span>{{ importing ? 'Importation...' : 'Importer la sélection' }}</span>
       </button>
     </div>
-  }
+  </div>
 </div>

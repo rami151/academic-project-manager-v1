@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ProjectService, Project } from '../../core/services/project.service';
 import { ProjectCreateDialogComponent } from '../project-create-dialog/project-create-dialog.component';
 
@@ -9,7 +10,7 @@ import { ProjectCreateDialogComponent } from '../project-create-dialog/project-c
   standalone: true,
   imports: [
     CommonModule,
-    ProjectCreateDialogComponent
+    MatDialogModule
   ],
   templateUrl: './project-list.html',
   styleUrl: './project-list.scss'
@@ -18,12 +19,12 @@ export class ProjectListComponent implements OnInit {
   projects: Project[] = [];
   isLoading = true;
   errorMessage = '';
-  showCreateDialog = false;
 
   constructor(
     private projectService: ProjectService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -36,28 +37,32 @@ export class ProjectListComponent implements OnInit {
     
     this.projectService.getProjects().subscribe({
       next: (projects) => {
-        this.projects = projects;
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.projects = projects;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        });
       },
       error: (error) => {
-        this.errorMessage = error.message || 'Failed to load projects';
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.errorMessage = error.message || 'Failed to load projects';
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        });
       }
     });
   }
 
   openCreateDialog(): void {
-    this.showCreateDialog = true;
-  }
+    const dialogRef = this.dialog.open(ProjectCreateDialogComponent, {
+      width: '500px'
+    });
 
-  onDialogClose(result: boolean | Event): void {
-    this.showCreateDialog = false;
-    const isSuccess = typeof result === 'boolean' ? result : false;
-    if (isSuccess) {
-      this.loadProjects();
-    }
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadProjects();
+      }
+    });
   }
 
   navigateToDetail(projectId: string): void {

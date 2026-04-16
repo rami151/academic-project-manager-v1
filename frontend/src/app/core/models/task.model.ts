@@ -27,6 +27,7 @@ export interface CreateTaskRequest {
   dueDate: string | null;
   estimatedDays: number | null;
   assignedToId: string | null;
+  status?: TaskStatus;
 }
 
 export interface UpdateTaskRequest {

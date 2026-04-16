@@ -9,7 +9,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -58,7 +57,7 @@ public class Task {
     @Builder.Default
     private Priority priority = Priority.MEDIUM;
 
-    private LocalDate dueDate;
+    private LocalDateTime dueDate;
 
     private Integer estimatedDays;
 
@@ -91,6 +90,6 @@ public class Task {
         if (dueDate == null || status == TaskStatus.DONE) {
             return false;
         }
-        return LocalDate.now().isAfter(dueDate);
+        return LocalDateTime.now().isAfter(dueDate);
     }
 }

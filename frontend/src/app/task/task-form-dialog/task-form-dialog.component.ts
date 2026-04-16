@@ -67,7 +67,8 @@ export class TaskFormDialogComponent implements OnInit {
       priority: this.formData.priority,
       dueDate: this.formData.dueDate ? new Date(this.formData.dueDate).toISOString() : null,
       estimatedDays: this.formData.estimatedDays || null,
-      assignedToId: null
+      assignedToId: null,
+      status: this.data.status
     };
 
     this.taskService.createTask(request).subscribe({

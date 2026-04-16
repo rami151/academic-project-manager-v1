@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService, User } from '../../core/services/auth.service';
 import { NotificationMenuComponent } from '../../shared/components/notification-menu/notification-menu.component';
 
@@ -10,7 +10,6 @@ import { NotificationMenuComponent } from '../../shared/components/notification-
   imports: [
     CommonModule,
     RouterLink,
-    RouterLinkActive,
     NotificationMenuComponent
   ],
   templateUrl: './navbar.html',

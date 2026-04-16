@@ -126,8 +126,8 @@
                         {{ getUserInitials(member.user.name) }}
                       </div>
                       <div>
-<span class="block text-sm font-medium text-neutral-900">{{ member.user.name }}</span>
-                    <span class="block text-xs text-neutral-600">{{ member.user.email }}</span>
+                        <span class="block text-sm font-medium text-neutral-900">{{ member.user.name || 'Inconnu' }}</span>
+                        <span class="block text-xs text-neutral-600">{{ member.user.email || '' }}</span>
                       </div>
                     </div>
                   </td>

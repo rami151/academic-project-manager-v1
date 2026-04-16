@@ -1,4 +1,8 @@
-<div class="p-6">
+<div class="p-6 bg-gradient-to-br from-neutral-50 to-neutral-100 rounded-2xl border border-neutral-200 shadow-xl overflow-hidden relative">
+  <!-- Decorative Background Blob -->
+  <div class="absolute -top-24 -right-24 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl z-[-10]"></div>
+  <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary-100/30 rounded-full blur-3xl z-[-10]"></div>
+
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-xl font-bold text-neutral-900">Créer un Projet</h2>
     <button (click)="onCancel()" class="p-2 hover:bg-neutral-100 rounded-lg transition-colors">
@@ -11,54 +15,71 @@
   <form (ngSubmit)="onSubmit()" class="space-y-4">
     <!-- Name -->
     <div>
-      <label class="block text-sm font-medium text-neutral-900 mb-2">Nom du projet</label>
-      <input 
-        type="text" 
-        [(ngModel)]="formData.name" 
-        name="name"
-        maxlength="100"
-        class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-        [class.border-danger-500]="formErrors.name"
-      />
-      <div class="flex justify-between mt-1">
+      <label class="block text-sm font-semibold text-neutral-700 mb-2">Nom du projet</label>
+      <div class="relative group">
+        <input 
+          type="text" 
+          [(ngModel)]="formData.name" 
+          name="name"
+          maxlength="100"
+          placeholder="Ex: Système de gestion académique"
+          class="w-full pl-4 pr-10 py-3 bg-white/50 backdrop-blur-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all shadow-sm group-hover:bg-white"
+          [class.border-danger-500]="formErrors.name"
+        />
+        <div class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 group-hover:text-primary-500 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9-4 9 4"/></svg>
+        </div>
+      </div>
+      <div class="flex justify-between mt-1.5 px-1">
         @if (formErrors.name) {
-          <p class="text-danger-600 text-sm">{{ formErrors.name }}</p>
+          <p class="text-danger-600 text-xs flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            {{ formErrors.name }}
+          </p>
         }
-        <p class="text-xs text-neutral-500 ml-auto">{{ formData.name.length || 0 }} / 100</p>
+        <p class="text-[10px] font-medium text-neutral-400 ml-auto">{{ formData.name.length || 0 }}/100</p>
       </div>
     </div>
 
     <!-- Description -->
     <div>
-      <label class="block text-sm font-medium text-neutral-900 mb-2">Description</label>
+      <label class="block text-sm font-semibold text-neutral-700 mb-2">Description</label>
       <textarea 
         [(ngModel)]="formData.description" 
         name="description"
         rows="4"
         maxlength="500"
-        class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+        placeholder="Décrivez brièvement les objectifs du projet..."
+        class="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all shadow-sm hover:bg-white resize-none"
         [class.border-danger-500]="formErrors.description"
       ></textarea>
-      <div class="flex justify-between mt-1">
+      <div class="flex justify-between mt-1.5 px-1">
         @if (formErrors.description) {
-          <p class="text-danger-600 text-sm">{{ formErrors.description }}</p>
+          <p class="text-danger-600 text-xs flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            {{ formErrors.description }}
+          </p>
         }
-        <p class="text-xs text-neutral-500 ml-auto">{{ formData.description.length || 0 }} / 500</p>
+        <p class="text-[10px] font-medium text-neutral-400 ml-auto">{{ formData.description.length || 0 }}/500</p>
       </div>
     </div>
 
-    <!-- Deadline -->
     <div>
-      <label class="block text-sm font-medium text-neutral-900 mb-2">Date limite</label>
-      <input 
-        type="date" 
-        [(ngModel)]="formData.deadline" 
-        name="deadline"
-        class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-        [class.border-danger-500]="formErrors.deadline"
-      />
+      <label class="block text-sm font-semibold text-neutral-700 mb-2">Date limite</label>
+      <div class="relative group">
+        <input 
+          type="date" 
+          [(ngModel)]="formData.deadline" 
+          name="deadline"
+          class="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all shadow-sm hover:bg-white"
+          [class.border-danger-500]="formErrors.deadline"
+        />
+      </div>
       @if (formErrors.deadline) {
-        <p class="text-danger-600 text-sm mt-1">{{ formErrors.deadline }}</p>
+        <p class="text-danger-600 text-xs mt-1.5 flex items-center gap-1 px-1">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          {{ formErrors.deadline }}
+        </p>
       }
     </div>
 
@@ -68,25 +89,24 @@
       </div>
     }
 
-    <!-- Actions -->
-    <div class="flex justify-end gap-3 pt-4">
+    <div class="flex justify-end gap-3 pt-6 border-t border-neutral-200/50">
       <button 
         type="button" 
         (click)="onCancel()"
-        class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors"
+        class="px-6 py-2.5 text-sm font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-white rounded-xl transition-all"
       >
         Annuler
       </button>
       <button 
         type="submit"
         [disabled]="isSubmitting || !formData.name || !formData.description || !formData.deadline"
-        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        class="px-8 py-2.5 bg-gradient-to-r from-primary-600 to-primary-500 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-primary-200 hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
       >
         @if (isSubmitting) {
-          <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
         }
-        <span>{{ isSubmitting ? 'Création...' : 'Créer' }}</span>
+        <span>{{ isSubmitting ? 'Création...' : 'Créer le projet' }}</span>
       </button>
     </div>
   </form>
-</div>
+</div>

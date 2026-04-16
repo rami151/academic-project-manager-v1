@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -24,7 +24,7 @@ public class UpdateTaskRequest {
 
     private Priority priority;
 
-    private LocalDate dueDate;
+    private LocalDateTime dueDate;
 
     private Integer estimatedDays;
 

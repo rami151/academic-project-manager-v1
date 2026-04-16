@@ -14,7 +14,7 @@ import com.academic.backend.shared.enums.TaskStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -46,7 +46,8 @@ public class TaskService {
         var project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
-        Integer maxPosition = taskRepository.findMaxPositionByProjectAndStatus(projectId, TaskStatus.TODO);
+        TaskStatus status = request.getStatus() != null ? request.getStatus() : TaskStatus.TODO;
+        Integer maxPosition = taskRepository.findMaxPositionByProjectAndStatus(projectId, status);
         int position = (maxPosition == null) ? 0 : maxPosition + 1;
 
         Task task = new Task();
@@ -56,7 +57,7 @@ public class TaskService {
         task.setPriority(request.getPriority());
         task.setDueDate(request.getDueDate());
         task.setEstimatedDays(request.getEstimatedDays());
-        task.setStatus(TaskStatus.TODO);
+        task.setStatus(status);
         task.setAiGenerated(false);
         task.setPosition(position);
 
@@ -259,7 +260,7 @@ public class TaskService {
     }
 
     public List<TaskResponse> getOverdueTasks(UUID projectId) {
-        LocalDate today = LocalDate.now();
+        LocalDateTime today = LocalDateTime.now();
         List<Task> tasks = taskRepository.findOverdueTasks(projectId, today);
 
         return tasks.stream()
