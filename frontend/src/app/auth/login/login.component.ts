@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -26,7 +26,8 @@ export class LoginComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private snackbarService: SnackbarService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -48,11 +49,13 @@ export class LoginComponent {
         localStorage.setItem('current_user', JSON.stringify(response.user));
         this.snackbarService.success('Login successful!');
         this.router.navigate(['/projects']);
+        this.cdr.detectChanges();
       },
       error: (error) => {
         this.errorMessage = error.message || 'Invalid email or password';
         this.snackbarService.error('Invalid email or password');
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

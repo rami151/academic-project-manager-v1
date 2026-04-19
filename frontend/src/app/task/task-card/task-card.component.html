@@ -14,6 +14,20 @@
     }
   </div>
   
+  <!-- Labels -->
+  @if (task.labels && task.labels.length > 0) {
+    <div class="flex flex-wrap gap-1 mb-2">
+      @for (label of task.labels; track label.id) {
+        <span 
+          class="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-sm"
+          [style.background-color]="label.color"
+        >
+          {{ label.name }}
+        </span>
+      }
+    </div>
+  }
+
   <h3 class="text-sm font-semibold text-neutral-900 mb-3 group-hover:text-primary-600 transition-colors">{{ task.title }}</h3>
   
   @if (task.dueDate || task.assignedToName) {

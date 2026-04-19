@@ -21,8 +21,7 @@ public class ProjectResponse {
     private LocalDateTime deadline;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private String ownerName;
-    private String ownerEmail;
+    private UserSummaryDTO owner;
     private int memberCount;
 
     public ProjectResponse(Project project) {
@@ -33,8 +32,7 @@ public class ProjectResponse {
         this.deadline = project.getDeadline();
         this.createdAt = project.getCreatedAt();
         this.updatedAt = project.getUpdatedAt();
-        this.ownerName = project.getOwner().getName();
-        this.ownerEmail = project.getOwner().getEmail();
+        this.owner = new UserSummaryDTO(project.getOwner());
     }
 
     public void setMemberCount(int memberCount) {

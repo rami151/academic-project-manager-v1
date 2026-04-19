@@ -1,6 +1,12 @@
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
 export type Priority = 'HIGH' | 'MEDIUM' | 'LOW';
 
+export interface Label {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface Task {
   id: string;
   projectId: string;
@@ -16,7 +22,7 @@ export interface Task {
   updatedAt: string;
   assignedToName: string | null;
   assignedToEmail: string | null;
-  labelNames: string[];
+  labels: Label[];
 }
 
 export interface CreateTaskRequest {
@@ -28,6 +34,7 @@ export interface CreateTaskRequest {
   estimatedDays: number | null;
   assignedToId: string | null;
   status?: TaskStatus;
+  labelIds?: string[];
 }
 
 export interface UpdateTaskRequest {
@@ -38,6 +45,7 @@ export interface UpdateTaskRequest {
   estimatedDays?: number | null;
   status?: TaskStatus;
   assignedToId?: string | null;
+  labelIds?: string[];
 }
 
 export interface MoveTaskRequest {

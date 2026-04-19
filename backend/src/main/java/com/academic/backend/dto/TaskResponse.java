@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
@@ -31,7 +32,7 @@ public class TaskResponse {
     private LocalDateTime updatedAt;
     private String assignedToName;
     private String assignedToEmail;
-    private List<String> labelNames = new ArrayList<>();
+    private List<LabelDTO> labels = new ArrayList<>();
 
     public TaskResponse(Task task) {
         this.id = task.getId();
@@ -49,6 +50,11 @@ public class TaskResponse {
         if (task.getAssignedTo() != null) {
             this.assignedToName = task.getAssignedTo().getName();
             this.assignedToEmail = task.getAssignedTo().getEmail();
+        }
+        if (task.getLabels() != null) {
+            this.labels = task.getLabels().stream()
+                    .map(LabelDTO::new)
+                    .collect(Collectors.toList());
         }
     }
 }

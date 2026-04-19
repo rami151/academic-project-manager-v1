@@ -47,15 +47,11 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        try {
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    request.getEmail(),
-                    request.getPassword()
-            );
-            authenticationManager.authenticate(authToken);
-        } catch (BadCredentialsException e) {
-            throw new RuntimeException("Invalid email or password");
-        }
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                request.getEmail(),
+                request.getPassword()
+        );
+        authenticationManager.authenticate(authToken);
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));

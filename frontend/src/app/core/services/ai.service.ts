@@ -43,8 +43,8 @@ export class AIService {
     return this.http.post<TaskDTO[]>(`${this.apiUrl}/import/${generationId}`, { taskIds });
   }
 
-  regenerateTask(taskId: string, feedback: string): Observable<TaskDTO> {
-    return this.http.post<TaskDTO>(`${this.apiUrl}/regenerate/${taskId}`, { feedback });
+  regenerateTask(taskId: string, feedback: string): Observable<Task> {
+    return this.http.post<Task>(`${this.apiUrl}/regenerate/${taskId}`, { feedback });
   }
 
   getProjectGenerations(projectId: string): Observable<GeminiGenerationResponse[]> {

@@ -68,6 +68,11 @@ public class TaskService {
             }
         }
 
+        if (request.getLabelIds() != null && !request.getLabelIds().isEmpty()) {
+            Set<Label> labels = new HashSet<>(labelRepository.findAllById(request.getLabelIds()));
+            task.setLabels(labels);
+        }
+
         Task savedTask = taskRepository.save(task);
         return new TaskResponse(savedTask);
     }
@@ -111,6 +116,11 @@ public class TaskService {
             if (assignee != null && authorizationService.isProjectMember(projectId, assignee.getId())) {
                 task.setAssignedTo(assignee);
             }
+        }
+
+        if (request.getLabelIds() != null) {
+            Set<Label> labels = new HashSet<>(labelRepository.findAllById(request.getLabelIds()));
+            task.setLabels(labels);
         }
 
         Task savedTask = taskRepository.save(task);

@@ -6,7 +6,9 @@ import { TaskService } from '../../core/services/task.service';
 import { CommentService, Comment } from '../../core/services/comment.service';
 import { AttachmentService, Attachment } from '../../core/services/attachment.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Task } from '../../core/models/task.model';
+import { AIService } from '../../core/services/ai.service';
+import { LabelService, Label } from '../../core/services/label.service';
+import { Task, Priority } from '../../core/models/task.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
@@ -35,6 +37,13 @@ export class TaskDetailComponent implements OnInit {
   
   currentUserId: string | null = null;
 
+  // AI & Labels features
+  showAiFeedback = false;
+  aiFeedback = '';
+  isRegenerating = false;
+  projectLabels: Label[] = [];
+  showLabelManager = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -42,6 +51,8 @@ export class TaskDetailComponent implements OnInit {
     private commentService: CommentService,
     private attachmentService: AttachmentService,
     private authService: AuthService,
+    private aiService: AIService,
+    private labelService: LabelService,
     private snackBar: MatSnackBar
   ) {}
 
@@ -59,8 +70,17 @@ export class TaskDetailComponent implements OnInit {
 
   loadTask(taskId: string): void {
     this.taskService.getTaskById(taskId).subscribe({
-      next: (task) => this.task = task,
+      next: (task) => {
+        this.task = task;
+        this.loadProjectLabels(task.projectId);
+      },
       error: () => this.snackBar.open('Erreur lors du chargement de la tâche', 'Fermer', { duration: 3000 })
+    });
+  }
+
+  loadProjectLabels(projectId: string): void {
+    this.labelService.getProjectLabels(projectId).subscribe({
+      next: (labels) => this.projectLabels = labels
     });
   }
 
@@ -153,7 +173,7 @@ export class TaskDetailComponent implements OnInit {
         this.selectedFile = null;
         this.uploading = false;
         this.uploadProgress = 0;
-        this.snackBar.open('Fichier上传成功', 'Fermer', { duration: 2000 });
+        this.snackBar.open('Fichier téléchargé avec succès', 'Fermer', { duration: 2000 });
       },
       error: () => {
         this.uploading = false;
@@ -179,6 +199,48 @@ export class TaskDetailComponent implements OnInit {
     });
   }
 
+  regenerateTask(): void {
+    if (!this.task || !this.aiFeedback.trim()) return;
+    this.isRegenerating = true;
+    this.aiService.regenerateTask(this.task.id, this.aiFeedback).subscribe({
+      next: (updatedTask) => {
+        this.task = updatedTask;
+        this.isRegenerating = false;
+        this.showAiFeedback = false;
+        this.aiFeedback = '';
+        this.snackBar.open('Tâche régénérée par l\'IA', 'Fermer', { duration: 2000 });
+      },
+      error: () => {
+        this.isRegenerating = false;
+        this.snackBar.open('Erreur lors de la régénération AI', 'Fermer', { duration: 3000 });
+      }
+    });
+  }
+
+  hasLabel(labelId: string): boolean {
+    return !!this.task?.labels.find(l => l.id === labelId);
+  }
+
+  toggleLabel(label: Label): void {
+    if (!this.task) return;
+    
+    const currentLabelIds = this.task.labels.map(l => l.id);
+    let newLabelIds: string[];
+    
+    if (this.hasLabel(label.id)) {
+      newLabelIds = currentLabelIds.filter(id => id !== label.id);
+    } else {
+      newLabelIds = [...currentLabelIds, label.id];
+    }
+
+    this.taskService.updateTask(this.task.id, { labelIds: newLabelIds }).subscribe({
+      next: (updated) => {
+        this.task = updated;
+      },
+      error: () => this.snackBar.open('Erreur lors de la mise à jour des labels', 'Fermer', { duration: 3000 })
+    });
+  }
+
   formatFileSize(bytes: number): string {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -201,7 +263,6 @@ export class TaskDetailComponent implements OnInit {
     const classes: { [key: string]: string } = {
       'TODO': 'bg-neutral-100 text-neutral-700',
       'IN_PROGRESS': 'bg-primary-100 text-primary-700',
-      'REVIEW': 'bg-warning-100 text-warning-700',
       'DONE': 'bg-success-100 text-success-700'
     };
     return classes[status] || 'bg-neutral-100 text-neutral-700';

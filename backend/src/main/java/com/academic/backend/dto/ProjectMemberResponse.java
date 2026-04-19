@@ -15,17 +15,13 @@ import java.util.UUID;
 public class ProjectMemberResponse {
 
     private UUID id;
-    private UUID userId;
-    private String userName;
-    private String userEmail;
+    private UserSummaryDTO user;
     private Permission permission;
     private LocalDateTime joinedAt;
 
     public ProjectMemberResponse(ProjectMember member) {
         this.id = member.getId();
-        this.userId = member.getUser().getId();
-        this.userName = member.getUser().getName();
-        this.userEmail = member.getUser().getEmail();
+        this.user = new UserSummaryDTO(member.getUser());
         this.permission = member.getPermission();
         this.joinedAt = member.getJoinedAt();
     }

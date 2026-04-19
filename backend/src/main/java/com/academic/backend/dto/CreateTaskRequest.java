@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -35,4 +36,6 @@ public class CreateTaskRequest {
     private UUID assignedToId;
 
     private TaskStatus status;
+
+    private Set<UUID> labelIds;
 }

@@ -20,5 +20,15 @@ export const routes: Routes = [
     loadChildren: () => import('./task/task-routing.module').then(m => m.TaskRoutingModule),
     canActivate: [authGuard]
   },
+  {
+    path: 'profile',
+    loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'settings',
+    loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent),
+    canActivate: [authGuard]
+  },
   { path: '**', redirectTo: '' },
 ];

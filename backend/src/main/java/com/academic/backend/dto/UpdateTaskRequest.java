@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -29,4 +30,6 @@ public class UpdateTaskRequest {
     private Integer estimatedDays;
 
     private UUID assignedToId;
+
+    private Set<UUID> labelIds;
 }
