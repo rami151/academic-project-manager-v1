@@ -43,8 +43,10 @@ public class AIController {
         UUID userId = ((CustomUserDetails) userDetails).getId();
         authorizationService.requirePermission(request.getProjectId(), userId, Permission.EDITOR);
         
-        var future = geminiService.generateTasks(request.getDescription(), request.getProjectId(), userId);
-        GeminiGeneration generation = future.join();
+        // Create record immediately, then execute async (no blocking)
+        GeminiGeneration generation = geminiService.createGeneration(
+            request.getDescription(), request.getProjectId(), userId);
+        geminiService.executeGeneration(generation.getId());
         
         Map<String, Object> response = new HashMap<>();
         response.put("generationId", generation.getId());
@@ -156,8 +158,10 @@ public class AIController {
             feedback != null ? feedback : "améliorer cette tâche"
         );
         
-        var future = geminiService.generateTasks(prompt, task.getProject().getId(), userId);
-        GeminiGeneration generation = future.join();
+        // Create and execute synchronously since we need the result
+        GeminiGeneration generation = geminiService.createGeneration(
+            prompt, task.getProject().getId(), userId);
+        generation = geminiService.executeGenerationSync(generation.getId());
         
         if (generation.getStatus() == com.academic.backend.shared.enums.GenerationStatus.FAILED) {
             throw new RuntimeException("Task regeneration failed");

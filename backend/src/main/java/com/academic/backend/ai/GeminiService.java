@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -36,26 +35,23 @@ public class GeminiService {
     @Value("${gemini.api.key}")
     private String apiKey;
 
-    private static final String MODEL = "gemini-1.5-flash";
     private static final String ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
     private static final String SYSTEM_PROMPT = """
         Tu es un chef de projet expert en développement logiciel académique.
- Ton rôle est de décomposer un projet en tâches concrètes et réalistes.
-""";
-    private static final String CONTRAINT_PROMPT = """
+        Ton rôle est de décomposer un projet en tâches concrètes et réalistes.""";
+    // Fixed: was "Le格式" (Chinese chars) - now "Le format"
+    private static final String CONSTRAINT_PROMPT = """
         Réponds UNIQUEMENT en JSON valide sans markdown ni texte supplémentaire.
- Le格式 doit être: {"tasks": [{"title": "string", "description": "string", "priority": "HIGH|MEDIUM|LOW", "estimatedDays": number}]}
-""";
+        Le format doit être: {"tasks": [{"title": "string", "description": "string", "priority": "HIGH|MEDIUM|LOW", "estimatedDays": number}]}""";
     private static final int MIN_DESCRIPTION_LENGTH = 20;
     private static final int MAX_RETRIES = 2;
-    private static final long TIMEOUT_SECONDS = 10;
 
-    @Async
-    public CompletableFuture<GeminiGeneration> generateTasks(String description, UUID projectId, UUID userId) {
-        log.info("Starting task generation for project {} by user {}", projectId, userId);
+    // Creates generation record without calling API - returns immediately
+    public GeminiGeneration createGeneration(String description, UUID projectId, UUID userId) {
+        log.info("Creating generation for project {} by user {}", projectId, userId);
 
         if (description == null || description.length() < MIN_DESCRIPTION_LENGTH) {
-            log.error("Description too short: {} chars (min required: {})", 
+            log.error("Description too short: {} chars (min required: {})",
                 description != null ? description.length() : 0, MIN_DESCRIPTION_LENGTH);
             throw new IllegalArgumentException("Description must be at least " + MIN_DESCRIPTION_LENGTH + " characters");
         }
@@ -70,97 +66,113 @@ public class GeminiService {
             .createdBy(user)
             .prompt(description)
             .status(GenerationStatus.PENDING)
+            .retryCount(0)
             .build();
         generation = generationRepository.save(generation);
         log.info("Created GeminiGeneration with id {}", generation.getId());
 
-        executeGenerationAsync(generation.getId());
-        return CompletableFuture.completedFuture(generation);
+        return generation;
     }
 
-    private void executeGenerationAsync(UUID generationId) {
-        log.info("Executing async generation for id {}", generationId);
+    // Async fire-and-forget - called from controller, runs in background thread
+    @Async
+    public void executeGeneration(UUID generationId) {
+        callGeminiApi(generationId);
+    }
 
-        try {
-            GeminiGeneration generation = generationRepository.findById(generationId)
-                .orElseThrow(() -> new IllegalArgumentException("Generation not found: " + generationId));
+    // Sync version - for regenerateTask that needs the result immediately
+    public GeminiGeneration executeGenerationSync(UUID generationId) {
+        callGeminiApi(generationId);
+        return generationRepository.findById(generationId)
+            .orElseThrow(() -> new IllegalArgumentException("Generation not found: " + generationId));
+    }
 
-            String sanitizedDescription = sanitizeInput(generation.getPrompt());
-            String jsonRequest = buildRequestJson(sanitizedDescription);
+    // Core API call with loop-based retry (fixes infinite recursion bug)
+    private void callGeminiApi(UUID generationId) {
+        log.info("Executing Gemini API call for generation {}", generationId);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<String> request = new HttpEntity<>(jsonRequest, headers);
+        // Fail fast if API key is missing
+        if (apiKey == null || apiKey.isBlank()) {
+            log.error("Gemini API key is not configured");
+            updateGenerationStatus(generationId, GenerationStatus.FAILED);
+            return;
+        }
 
-            String url = ENDPOINT + "?key=" + apiKey;
-            log.debug("Calling Gemini API at {}", url);
+        for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                GeminiGeneration generation = generationRepository.findById(generationId)
+                    .orElseThrow(() -> new IllegalArgumentException("Generation not found: " + generationId));
 
-            ResponseEntity<String> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                request,
-                String.class
-            );
+                // Jackson handles JSON escaping - no manual sanitization needed
+                String jsonRequest = buildRequestJson(generation.getPrompt());
 
-            if (response.getStatusCode().value() == 429) {
-                log.error("Quota exceeded for Gemini API");
-                generation.setStatus(GenerationStatus.FAILED);
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                HttpEntity<String> request = new HttpEntity<>(jsonRequest, headers);
+
+                String url = ENDPOINT + "?key=" + apiKey;
+                log.debug("Calling Gemini API (attempt {})", attempt + 1);
+
+                ResponseEntity<String> response = restTemplate.exchange(
+                    url, HttpMethod.POST, request, String.class);
+
+                String responseBody = response.getBody();
+                String textResponse = extractTextFromResponse(responseBody);
+
+                generation.setRawResponse(textResponse);
+                generation.setStatus(GenerationStatus.DONE);
+                generation.setTokensUsed(estimateTokens(textResponse));
+                generation.setRetryCount(attempt);
                 generationRepository.save(generation);
+
+                log.info("Generation {} completed successfully", generationId);
                 return;
+
+            } catch (Exception e) {
+                log.error("Generation attempt {} failed: {}", attempt + 1, e.getMessage());
+
+                if (attempt >= MAX_RETRIES) {
+                    log.error("Max retries reached for generation {}", generationId);
+                    generationRepository.findById(generationId).ifPresent(gen -> {
+                        gen.setStatus(GenerationStatus.FAILED);
+                        generationRepository.save(gen);
+                    });
+                    return;
+                }
+
+                // Save retry count to DB before next attempt (fixes infinite loop bug)
+                final int currentAttempt = attempt;
+                generationRepository.findById(generationId).ifPresent(gen -> {
+                    gen.setRetryCount(currentAttempt + 1);
+                    generationRepository.save(gen);
+                });
             }
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                log.error("Gemini API error: {}", response.getStatusCode());
-                generation.setStatus(GenerationStatus.FAILED);
-                generationRepository.save(generation);
-                return;
-            }
-
-            String responseBody = response.getBody();
-            String textResponse = extractTextFromResponse(responseBody);
-
-            generation.setRawResponse(textResponse);
-            generation.setStatus(GenerationStatus.DONE);
-            generation.setTokensUsed(estimateTokens(textResponse));
-            generationRepository.save(generation);
-
-            log.info("Generation {} completed successfully", generationId);
-
-        } catch (Exception e) {
-            log.error("Generation failed: {}", e.getMessage(), e);
-            handleGenerationError(generationId);
         }
     }
 
     private String buildRequestJson(String userInput) {
         try {
+            // System instruction - parts must be an array
             Map<String, Object> systemInstruction = Map.of(
-                "role", "system",
-                "parts", Map.of("text", SYSTEM_PROMPT + "\n" + CONTRAINT_PROMPT)
+                "parts", new Object[]{Map.of("text", SYSTEM_PROMPT + "\n" + CONSTRAINT_PROMPT)}
             );
+
             Map<String, Object> userPart = Map.of("text", userInput);
             Map<String, Object> userContent = Map.of(
                 "role", "user",
                 "parts", new Object[]{userPart}
             );
 
-            Map<String, Object> request = new HashMap<>();
-            request.put("contents", new Object[]{userContent});
-            request.put("systemInstruction", systemInstruction);
+            Map<String, Object> requestMap = new HashMap<>();
+            requestMap.put("contents", new Object[]{userContent});
+            requestMap.put("systemInstruction", systemInstruction);
 
-            return objectMapper.writeValueAsString(request);
+            // Jackson handles all JSON escaping automatically
+            return objectMapper.writeValueAsString(requestMap);
         } catch (Exception e) {
             log.error("Failed to build request JSON: {}", e.getMessage());
             throw new RuntimeException("Failed to build request", e);
         }
-    }
-
-    private String sanitizeInput(String input) {
-        return input.replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t");
     }
 
     private String extractTextFromResponse(String jsonResponse) {
@@ -196,29 +208,18 @@ public class GeminiService {
         });
     }
 
-    private void handleGenerationError(UUID generationId) {
-        generationRepository.findById(generationId).ifPresent(gen -> {
-            if (gen.getRetryCount() == null) {
-                gen.setRetryCount(0);
-            }
-            gen.setRetryCount(gen.getRetryCount() + 1);
-            if (gen.getRetryCount() < MAX_RETRIES) {
-                log.info("Retrying generation {} (attempt {})", generationId, gen.getRetryCount());
-                executeGenerationAsync(generationId);
-            } else {
-                log.error("Max retries reached for generation {}", generationId);
-                gen.setStatus(GenerationStatus.FAILED);
-                generationRepository.save(gen);
-            }
-        });
-    }
-
     public List<TaskDTO> parseTasksFromResponse(String jsonResponse) {
         log.debug("Parsing tasks from response");
         List<TaskDTO> tasks = new ArrayList<>();
 
         try {
-            JsonNode root = objectMapper.readTree(jsonResponse);
+            // Strip markdown code fences if Gemini wraps response in ```json ... ```
+            String cleaned = jsonResponse.trim();
+            if (cleaned.startsWith("```")) {
+                cleaned = cleaned.replaceAll("^```[a-zA-Z]*\\n?", "").replaceAll("```$", "").trim();
+            }
+
+            JsonNode root = objectMapper.readTree(cleaned);
             JsonNode tasksArray = root.get("tasks");
             if (tasksArray == null || !tasksArray.isArray()) {
                 log.warn("No 'tasks' array in response");
@@ -228,11 +229,11 @@ public class GeminiService {
             for (JsonNode taskNode : tasksArray) {
                 try {
                     String title = taskNode.has("title") ? taskNode.get("title").asText() : null;
-                    Priority priority = taskNode.has("priority") 
-                        ? Priority.valueOf(taskNode.get("priority").asText()) 
+                    Priority priority = taskNode.has("priority")
+                        ? Priority.valueOf(taskNode.get("priority").asText())
                         : Priority.MEDIUM;
-                    Integer estimatedDays = taskNode.has("estimatedDays") 
-                        ? taskNode.get("estimatedDays").asInt() 
+                    Integer estimatedDays = taskNode.has("estimatedDays")
+                        ? taskNode.get("estimatedDays").asInt()
                         : 1;
 
                     if (title == null || title.isBlank()) {
@@ -278,10 +279,12 @@ public class GeminiService {
         }
 
         generation.setStatus(GenerationStatus.PENDING);
-        generation.setRetryCount(retryCount + 1);
+        generation.setRetryCount(retryCount);
         generation = generationRepository.save(generation);
 
-        executeGenerationAsync(generationId);
-        return generation;
+        callGeminiApi(generationId);
+
+        return generationRepository.findById(generationId)
+            .orElseThrow(() -> new IllegalArgumentException("Generation not found"));
     }
 }
