@@ -95,4 +95,5 @@ export class ProjectService {
   updateMemberPermission(projectId: string, memberId: string, permission: Permission): Observable<ProjectMember> {
     return this.http.patch<ProjectMember>(`${this.apiUrl}/${projectId}/members/${memberId}`, { permission });
   }
+
 }

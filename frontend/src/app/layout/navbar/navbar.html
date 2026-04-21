@@ -61,6 +61,15 @@
                   Profil
                 </button>
                 <button 
+                  (click)="navigateTo('/tasks/overdue')"
+                  class="w-full text-left px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-primary-600 transition-colors flex items-center gap-3"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l2 2m6-2a8 8 0 11-16 0 8 8 0 0116 0z"/>
+                  </svg>
+                  Tâches en retard
+                </button>
+                <button 
                   (click)="navigateTo('/settings')"
                   class="w-full text-left px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-primary-600 transition-colors flex items-center gap-3"
                 >

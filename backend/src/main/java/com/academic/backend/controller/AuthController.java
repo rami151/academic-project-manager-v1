@@ -3,6 +3,8 @@ package com.academic.backend.controller;
 import com.academic.backend.dto.AuthResponse;
 import com.academic.backend.dto.LoginRequest;
 import com.academic.backend.dto.RegisterRequest;
+import com.academic.backend.repository.UserRepository;
+import com.academic.backend.security.CustomUserDetails;
 import com.academic.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
@@ -55,9 +58,14 @@ public class AuthController {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or expired token"));
         }
+        CustomUserDetails customUser = (CustomUserDetails) userDetails;
+        var user = userRepository.findById(customUser.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(Map.of(
-                "email", userDetails.getUsername(),
-                "authorities", userDetails.getAuthorities()
+                "id", user.getId(),
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "role", user.getRole()
         ));
     }
 }

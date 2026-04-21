@@ -42,6 +42,10 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials);
   }
 
+  getMe(): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/me`);
+  }
+
   logout(): void {
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('current_user');
@@ -79,5 +83,18 @@ export class AuthService {
     } catch (e) {
       return null;
     }
+  }
+
+  syncCurrentUser(): Observable<User> {
+    return new Observable<User>((observer) => {
+      this.getMe().subscribe({
+        next: (user) => {
+          localStorage.setItem('current_user', JSON.stringify(user));
+          observer.next(user);
+          observer.complete();
+        },
+        error: (error) => observer.error(error)
+      });
+    });
   }
 }

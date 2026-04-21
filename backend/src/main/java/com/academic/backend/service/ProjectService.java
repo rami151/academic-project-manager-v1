@@ -140,4 +140,45 @@ public class ProjectService {
                 .map(ProjectMemberResponse::new)
                 .collect(Collectors.toList());
     }
+
+    @CacheEvict(value = "projects", allEntries = true)
+    public ProjectMemberResponse updateMemberPermission(UUID projectId, UUID memberId, Permission permission, UUID currentUserId) {
+        authorizationService.requirePermission(projectId, currentUserId, Permission.OWNER);
+        if (permission == null) {
+            throw new RuntimeException("Permission is required");
+        }
+
+        ProjectMember membership = projectMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Project member not found"));
+
+        if (!membership.getProject().getId().equals(projectId)) {
+            throw new RuntimeException("Member does not belong to this project");
+        }
+
+        if (membership.getPermission() == Permission.OWNER) {
+            throw new RuntimeException("Owner permission cannot be changed");
+        }
+
+        membership.setPermission(permission);
+        ProjectMember updated = projectMemberRepository.save(membership);
+        return new ProjectMemberResponse(updated);
+    }
+
+    @CacheEvict(value = "projects", allEntries = true)
+    public void removeMember(UUID projectId, UUID memberId, UUID currentUserId) {
+        authorizationService.requirePermission(projectId, currentUserId, Permission.OWNER);
+
+        ProjectMember membership = projectMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Project member not found"));
+
+        if (!membership.getProject().getId().equals(projectId)) {
+            throw new RuntimeException("Member does not belong to this project");
+        }
+
+        if (membership.getPermission() == Permission.OWNER) {
+            throw new RuntimeException("Owner cannot be removed from project");
+        }
+
+        projectMemberRepository.delete(membership);
+    }
 }

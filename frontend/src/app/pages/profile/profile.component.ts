@@ -82,8 +82,22 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit() {
     this.user = this.authService.getCurrentUser();
+    this.updateInitial();
+    if (this.authService.isAuthenticated()) {
+      this.authService.syncCurrentUser().subscribe({
+        next: (user) => {
+          this.user = user;
+          this.updateInitial();
+        }
+      });
+    }
+  }
+
+  private updateInitial(): void {
     if (this.user?.name) {
       this.userInitial = this.user.name.charAt(0).toUpperCase();
+    } else {
+      this.userInitial = '';
     }
   }
 }

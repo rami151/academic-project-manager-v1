@@ -26,6 +26,8 @@ public class GeminiGenerationResponse {
     private GenerationStatus status;
     private Integer tokensUsed;
     private Integer retryCount;
+    private String failureReason;
+    private Integer providerStatusCode;
     private LocalDateTime createdAt;
     private List<TaskDTO> parsedTasks;
 
@@ -39,6 +41,8 @@ public class GeminiGenerationResponse {
         this.status = generation.getStatus();
         this.tokensUsed = generation.getTokensUsed();
         this.retryCount = generation.getRetryCount();
+        this.failureReason = generation.getFailureReason();
+        this.providerStatusCode = generation.getProviderStatusCode();
         this.createdAt = generation.getCreatedAt();
     }
 }

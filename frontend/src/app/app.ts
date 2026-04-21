@@ -22,6 +22,14 @@ export class App implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    if (this.authService.isAuthenticated()) {
+      this.authService.syncCurrentUser().subscribe({
+        error: () => {
+          // Keep existing interceptor-driven 401 handling behavior.
+        }
+      });
+    }
+
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         const url = event.url;
