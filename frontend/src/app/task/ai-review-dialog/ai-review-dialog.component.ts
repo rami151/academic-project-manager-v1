@@ -85,7 +85,7 @@ export class AiReviewDialogComponent implements OnInit, OnDestroy {
       next: (response) => {
         attempts++;
         if (attempts > AiReviewDialogComponent.MAX_POLL_ATTEMPTS) {
-          this.error = 'La génération prend trop de temps. Vérifiez les logs backend/Gemini puis réessayez.';
+          this.error = 'La génération prend trop de temps. Vérifiez les logs backend/Groq puis réessayez.';
           this.loading = false;
           this.pollSubscription?.unsubscribe();
         } else if (response.status === 'DONE') {
@@ -109,10 +109,10 @@ export class AiReviewDialogComponent implements OnInit, OnDestroy {
 
   private getGenerationFailureMessage(reason?: string, providerStatusCode?: number): string {
     if (providerStatusCode === 404) {
-      return 'Le modele IA configure est indisponible. Mettez a jour la configuration GEMINI_MODEL.';
+      return 'Le modele IA configure est indisponible. Mettez a jour la configuration GROQ_MODEL.';
     }
     if (providerStatusCode === 429) {
-      return 'Le quota Gemini est atteint. Reessayez plus tard.';
+      return 'Le quota Groq est atteint. Reessayez plus tard.';
     }
     if (reason) {
       return `La generation a echoue: ${reason}`;
@@ -123,7 +123,7 @@ export class AiReviewDialogComponent implements OnInit, OnDestroy {
   private handleDoneState(parsedTasks: TaskDTO[]): void {
     this.tasks = parsedTasks.map((t, i) => ({ ...t, selected: true, index: i }));
     if (this.tasks.length === 0) {
-      this.error = 'Aucune tâche valide n’a été générée. Vérifiez le format JSON renvoyé par Gemini.';
+      this.error = `Aucune tâche valide n'a été générée. Vérifiez le format JSON renvoyé par l'IA.`;
     }
     this.loading = false;
     this.cdr.markForCheck();

@@ -83,18 +83,19 @@ export class KanbanBoardComponent implements OnInit {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
-      const task = event.previousContainer.data[event.previousIndex];
+      // Optimistic update: move item immediately so CDK renders the change
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
+
+      const task = event.container.data[event.currentIndex];
       const newStatus = this.columns.find(c => c.tasks === event.container.data)?.status || 'TODO';
-      
+
+      // Persist to backend; revert on failure
       this.taskService.moveTask(task.id, newStatus, event.currentIndex).subscribe({
-        next: () => {
-          transferArrayItem(
-            event.previousContainer.data,
-            event.container.data,
-            event.previousIndex,
-            event.currentIndex
-          );
-        },
         error: () => {
           this.loadTasks();
         }

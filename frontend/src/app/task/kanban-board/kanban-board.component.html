@@ -34,7 +34,7 @@
   </div>
 
   <!-- Kanban Columns -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6" role="region" aria-label="Tableau Kanban">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6" cdkDropListGroup role="region" aria-label="Tableau Kanban">
     @for (column of columns; track column.status) {
       <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden" role="listbox" [attr.aria-label]="column.name + ' - ' + column.tasks.length + ' tâches'">
         <!-- Column Header -->
