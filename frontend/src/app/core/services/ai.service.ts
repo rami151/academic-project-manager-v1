@@ -16,6 +16,8 @@ export interface GeminiGenerationResponse {
   status: 'PENDING' | 'DONE' | 'FAILED';
   prompt: string;
   rawResponse: string;
+  failureReason?: string;
+  providerStatusCode?: number;
   parsedTasks: TaskDTO[];
   createdAt: string;
 }
@@ -39,7 +41,7 @@ export class AIService {
     return this.http.get<GeminiGenerationResponse>(`${this.apiUrl}/generations/${generationId}`);
   }
 
-  importTasks(generationId: string, taskIds: string[]): Observable<TaskDTO[]> {
+  importTasks(generationId: string, taskIds: number[]): Observable<TaskDTO[]> {
     return this.http.post<TaskDTO[]>(`${this.apiUrl}/import/${generationId}`, { taskIds });
   }
 

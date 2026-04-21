@@ -45,7 +45,7 @@ export class AiGenerationDialogComponent implements OnInit {
         this.dialogRef.close({ generationId: response.generationId });
       },
       error: (err) => {
-        this.error = 'Erreur lors de la génération. Veuillez réessayer.';
+        this.error = err?.message || 'Erreur lors de la generation. Veuillez reessayer.';
         this.loading = false;
       }
     });

@@ -26,6 +26,7 @@ interface TaskItem extends TaskDTO {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AiReviewDialogComponent implements OnInit, OnDestroy {
+  private static readonly MAX_POLL_ATTEMPTS = 30; // ~60 seconds with 2s interval
   loading = true;
   importing = false;
   tasks: TaskItem[] = [];
@@ -49,6 +50,7 @@ export class AiReviewDialogComponent implements OnInit, OnDestroy {
 
   loadGeneration(): void {
     this.loading = true;
+    this.error = null;
     this.cdr.markForCheck();
 
     this.aiService.getGeneration(this.data.generationId).subscribe({
@@ -56,11 +58,10 @@ export class AiReviewDialogComponent implements OnInit, OnDestroy {
         if (response.status === 'PENDING') {
           // Generation still in progress, poll every 2 seconds
           this.startPolling();
-        } else if (response.status === 'DONE' && response.parsedTasks) {
-          this.tasks = response.parsedTasks.map((t, i) => ({ ...t, selected: true, index: i }));
-          this.loading = false;
+        } else if (response.status === 'DONE') {
+          this.handleDoneState(response.parsedTasks ?? []);
         } else {
-          this.error = 'La génération a échoué. Veuillez réessayer.';
+          this.error = this.getGenerationFailureMessage(response.failureReason, response.providerStatusCode);
           this.loading = false;
         }
         this.cdr.markForCheck();
@@ -75,17 +76,23 @@ export class AiReviewDialogComponent implements OnInit, OnDestroy {
 
   // Poll until generation completes (DONE or FAILED)
   private startPolling(): void {
+    let attempts = 0;
+    this.pollSubscription?.unsubscribe();
     this.pollSubscription = interval(2000).pipe(
       switchMap(() => this.aiService.getGeneration(this.data.generationId)),
       takeWhile(response => response.status === 'PENDING', true)
     ).subscribe({
       next: (response) => {
-        if (response.status === 'DONE' && response.parsedTasks) {
-          this.tasks = response.parsedTasks.map((t, i) => ({ ...t, selected: true, index: i }));
+        attempts++;
+        if (attempts > AiReviewDialogComponent.MAX_POLL_ATTEMPTS) {
+          this.error = 'La génération prend trop de temps. Vérifiez les logs backend/Gemini puis réessayez.';
           this.loading = false;
           this.pollSubscription?.unsubscribe();
+        } else if (response.status === 'DONE') {
+          this.handleDoneState(response.parsedTasks ?? []);
+          this.pollSubscription?.unsubscribe();
         } else if (response.status === 'FAILED') {
-          this.error = 'La génération a échoué. Veuillez réessayer.';
+          this.error = this.getGenerationFailureMessage(response.failureReason, response.providerStatusCode);
           this.loading = false;
           this.pollSubscription?.unsubscribe();
         }
@@ -94,9 +101,32 @@ export class AiReviewDialogComponent implements OnInit, OnDestroy {
       error: () => {
         this.error = 'Erreur lors du chargement';
         this.loading = false;
+        this.pollSubscription?.unsubscribe();
         this.cdr.markForCheck();
       }
     });
+  }
+
+  private getGenerationFailureMessage(reason?: string, providerStatusCode?: number): string {
+    if (providerStatusCode === 404) {
+      return 'Le modele IA configure est indisponible. Mettez a jour la configuration GEMINI_MODEL.';
+    }
+    if (providerStatusCode === 429) {
+      return 'Le quota Gemini est atteint. Reessayez plus tard.';
+    }
+    if (reason) {
+      return `La generation a echoue: ${reason}`;
+    }
+    return 'La generation a echoue. Veuillez reessayer.';
+  }
+
+  private handleDoneState(parsedTasks: TaskDTO[]): void {
+    this.tasks = parsedTasks.map((t, i) => ({ ...t, selected: true, index: i }));
+    if (this.tasks.length === 0) {
+      this.error = 'Aucune tâche valide n’a été générée. Vérifiez le format JSON renvoyé par Gemini.';
+    }
+    this.loading = false;
+    this.cdr.markForCheck();
   }
 
   toggleAll(): void {
@@ -119,7 +149,7 @@ export class AiReviewDialogComponent implements OnInit, OnDestroy {
   }
 
   importSelected(): void {
-    const selectedIds = this.tasks.filter(t => t.selected).map(t => t.index.toString());
+    const selectedIds = this.tasks.filter(t => t.selected).map(t => t.index);
     
     if (selectedIds.length === 0) {
       this.error = 'Sélectionnez au moins une tâche';

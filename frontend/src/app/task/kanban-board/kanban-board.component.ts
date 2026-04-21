@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TaskService } from '../../core/services/task.service';
 import { Task } from '../../core/models/task.model';
+import { AIService, GeminiGenerationResponse } from '../../core/services/ai.service';
 import { TaskFormDialogComponent } from '../task-form-dialog/task-form-dialog.component';
 import { AiGenerationDialogComponent } from '../ai-generation-dialog/ai-generation-dialog.component';
 import { AiReviewDialogComponent } from '../ai-review-dialog/ai-review-dialog.component';
@@ -35,10 +36,12 @@ export class KanbanBoardComponent implements OnInit {
     { name: 'Terminé', status: 'DONE', tasks: [] }
   ];
   loading = false;
+  generations: GeminiGenerationResponse[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private taskService: TaskService,
+    private aiService: AIService,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef
   ) {}
@@ -47,6 +50,7 @@ export class KanbanBoardComponent implements OnInit {
     this.projectId = this.route.snapshot.paramMap.get('projectId') || '';
     if (this.projectId) {
       this.loadTasks();
+      this.loadGenerations();
     }
   }
 
@@ -131,6 +135,16 @@ export class KanbanBoardComponent implements OnInit {
       data: { generationId, projectId: this.projectId }
     }).afterClosed().subscribe(() => {
       this.loadTasks();
+      this.loadGenerations();
+    });
+  }
+
+  loadGenerations(): void {
+    this.aiService.getProjectGenerations(this.projectId).subscribe({
+      next: (generations) => {
+        this.generations = generations.slice(0, 5);
+        this.cdr.detectChanges();
+      }
     });
   }
 }

@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -35,7 +37,11 @@ public class GeminiService {
     @Value("${gemini.api.key}")
     private String apiKey;
 
-    private static final String ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+    @Value("${gemini.api.base-url:https://generativelanguage.googleapis.com/v1beta}")
+    private String apiBaseUrl;
+
+    @Value("${gemini.api.model:gemini-2.0-flash}")
+    private String modelName;
     private static final String SYSTEM_PROMPT = """
         Tu es un chef de projet expert en développement logiciel académique.
         Ton rôle est de décomposer un projet en tâches concrètes et réalistes.""";
@@ -45,6 +51,7 @@ public class GeminiService {
         Le format doit être: {"tasks": [{"title": "string", "description": "string", "priority": "HIGH|MEDIUM|LOW", "estimatedDays": number}]}""";
     private static final int MIN_DESCRIPTION_LENGTH = 20;
     private static final int MAX_RETRIES = 2;
+    private static final Set<Integer> NON_RETRYABLE_HTTP_STATUSES = Set.of(400, 401, 403, 404, 429);
 
     // Creates generation record without calling API - returns immediately
     public GeminiGeneration createGeneration(String description, UUID projectId, UUID userId) {
@@ -70,6 +77,7 @@ public class GeminiService {
             .build();
         generation = generationRepository.save(generation);
         log.info("Created GeminiGeneration with id {}", generation.getId());
+        log.info("Gemini model configured: {}", modelName);
 
         return generation;
     }
@@ -94,7 +102,7 @@ public class GeminiService {
         // Fail fast if API key is missing
         if (apiKey == null || apiKey.isBlank()) {
             log.error("Gemini API key is not configured");
-            updateGenerationStatus(generationId, GenerationStatus.FAILED);
+            markGenerationFailed(generationId, "Gemini API key is not configured", null);
             return;
         }
 
@@ -110,7 +118,7 @@ public class GeminiService {
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 HttpEntity<String> request = new HttpEntity<>(jsonRequest, headers);
 
-                String url = ENDPOINT + "?key=" + apiKey;
+                String url = String.format("%s/models/%s:generateContent?key=%s", apiBaseUrl, modelName, apiKey);
                 log.debug("Calling Gemini API (attempt {})", attempt + 1);
 
                 ResponseEntity<String> response = restTemplate.exchange(
@@ -123,20 +131,51 @@ public class GeminiService {
                 generation.setStatus(GenerationStatus.DONE);
                 generation.setTokensUsed(estimateTokens(textResponse));
                 generation.setRetryCount(attempt);
+                generation.setFailureReason(null);
+                generation.setProviderStatusCode(null);
                 generationRepository.save(generation);
 
                 log.info("Generation {} completed successfully", generationId);
                 return;
 
+            } catch (RestClientResponseException e) {
+                log.error("Generation attempt {} failed with Gemini HTTP {}: {}", attempt + 1, e.getStatusCode(), e.getResponseBodyAsString());
+                Integer providerStatusCode = e.getStatusCode().value();
+                String failureReason = buildProviderFailureReason(providerStatusCode, e.getResponseBodyAsString());
+                if (NON_RETRYABLE_HTTP_STATUSES.contains(providerStatusCode)) {
+                    markGenerationFailed(generationId, failureReason, providerStatusCode);
+                    return;
+                }
+                if (attempt >= MAX_RETRIES) {
+                    log.error("Max retries reached for generation {}", generationId);
+                    markGenerationFailed(generationId, failureReason, providerStatusCode);
+                    return;
+                }
+
+                final int currentAttempt = attempt;
+                generationRepository.findById(generationId).ifPresent(gen -> {
+                    gen.setRetryCount(currentAttempt + 1);
+                    generationRepository.save(gen);
+                });
+            } catch (ResourceAccessException e) {
+                log.error("Generation attempt {} network/timeout error: {}", attempt + 1, e.getMessage());
+                if (attempt >= MAX_RETRIES) {
+                    log.error("Max retries reached for generation {}", generationId);
+                    markGenerationFailed(generationId, "Network timeout while contacting Gemini API", null);
+                    return;
+                }
+
+                final int currentAttempt = attempt;
+                generationRepository.findById(generationId).ifPresent(gen -> {
+                    gen.setRetryCount(currentAttempt + 1);
+                    generationRepository.save(gen);
+                });
             } catch (Exception e) {
-                log.error("Generation attempt {} failed: {}", attempt + 1, e.getMessage());
+                log.error("Generation attempt {} failed: {}", attempt + 1, e.getMessage(), e);
 
                 if (attempt >= MAX_RETRIES) {
                     log.error("Max retries reached for generation {}", generationId);
-                    generationRepository.findById(generationId).ifPresent(gen -> {
-                        gen.setStatus(GenerationStatus.FAILED);
-                        generationRepository.save(gen);
-                    });
+                    markGenerationFailed(generationId, "Unexpected AI provider error", null);
                     return;
                 }
 
@@ -204,6 +243,28 @@ public class GeminiService {
     private void updateGenerationStatus(UUID generationId, GenerationStatus status) {
         generationRepository.findById(generationId).ifPresent(gen -> {
             gen.setStatus(status);
+            generationRepository.save(gen);
+        });
+    }
+
+    private String buildProviderFailureReason(Integer statusCode, String responseBody) {
+        if (statusCode == 404) {
+            return String.format("Configured Gemini model '%s' is unavailable for generateContent", modelName);
+        }
+        if (statusCode == 429) {
+            return "Gemini API rate limit or quota exceeded";
+        }
+        if (responseBody != null && !responseBody.isBlank()) {
+            return String.format("Gemini API error %d", statusCode);
+        }
+        return String.format("Gemini API request failed with status %d", statusCode);
+    }
+
+    private void markGenerationFailed(UUID generationId, String failureReason, Integer providerStatusCode) {
+        generationRepository.findById(generationId).ifPresent(gen -> {
+            gen.setStatus(GenerationStatus.FAILED);
+            gen.setFailureReason(failureReason);
+            gen.setProviderStatusCode(providerStatusCode);
             generationRepository.save(gen);
         });
     }
@@ -280,6 +341,8 @@ public class GeminiService {
 
         generation.setStatus(GenerationStatus.PENDING);
         generation.setRetryCount(retryCount);
+        generation.setFailureReason(null);
+        generation.setProviderStatusCode(null);
         generation = generationRepository.save(generation);
 
         callGeminiApi(generationId);

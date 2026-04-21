@@ -97,16 +97,16 @@ public class AIController {
         }
         
         List<TaskDTO> parsedTasks = geminiService.parseTasksFromResponse(generation.getRawResponse());
-        Map<UUID, TaskDTO> tasksByIndex = new HashMap<>();
+        Map<Integer, TaskDTO> tasksByIndex = new HashMap<>();
         for (int i = 0; i < parsedTasks.size(); i++) {
-            tasksByIndex.put(UUID.randomUUID(), parsedTasks.get(i));
+            tasksByIndex.put(i, parsedTasks.get(i));
         }
         
         List<Task> importedTasks = new ArrayList<>();
         Integer maxPosition = taskRepository.findMaxPositionByProjectAndStatus(projectId, TaskStatus.TODO);
         int position = maxPosition != null ? maxPosition + 1 : 0;
         
-        for (UUID taskId : request.getTaskIds()) {
+        for (Integer taskId : request.getTaskIds()) {
             TaskDTO dto = tasksByIndex.get(taskId);
             if (dto != null) {
                 Task task = new Task();

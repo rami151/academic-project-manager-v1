@@ -53,6 +53,12 @@ public class GeminiGeneration {
     @Builder.Default
     private Integer retryCount = 0;
 
+    @Column(name = "failure_reason", columnDefinition = "TEXT")
+    private String failureReason;
+
+    @Column(name = "provider_status_code")
+    private Integer providerStatusCode;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
