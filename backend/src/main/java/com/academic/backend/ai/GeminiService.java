@@ -34,13 +34,13 @@ public class GeminiService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${gemini.api.key}")
+    @Value("${groq.api.key}")
     private String apiKey;
 
-    @Value("${gemini.api.base-url:https://generativelanguage.googleapis.com/v1beta}")
+    @Value("${groq.api.base-url:https://api.groq.com/openai/v1}")
     private String apiBaseUrl;
 
-    @Value("${gemini.api.model:gemini-2.0-flash}")
+    @Value("${groq.api.model:llama-3.3-70b-versatile}")
     private String modelName;
     private static final String SYSTEM_PROMPT = """
         Tu es un chef de projet expert en développement logiciel académique.
@@ -77,7 +77,7 @@ public class GeminiService {
             .build();
         generation = generationRepository.save(generation);
         log.info("Created GeminiGeneration with id {}", generation.getId());
-        log.info("Gemini model configured: {}", modelName);
+        log.info("Groq model configured: {}", modelName);
 
         return generation;
     }
@@ -97,12 +97,12 @@ public class GeminiService {
 
     // Core API call with loop-based retry (fixes infinite recursion bug)
     private void callGeminiApi(UUID generationId) {
-        log.info("Executing Gemini API call for generation {}", generationId);
+        log.info("Executing Groq API call for generation {}", generationId);
 
         // Fail fast if API key is missing
         if (apiKey == null || apiKey.isBlank()) {
-            log.error("Gemini API key is not configured");
-            markGenerationFailed(generationId, "Gemini API key is not configured", null);
+            log.error("Groq API key is not configured");
+            markGenerationFailed(generationId, "Groq API key is not configured", null);
             return;
         }
 
@@ -116,10 +116,12 @@ public class GeminiService {
 
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
+                // Groq uses Bearer token auth instead of query-param key
+                headers.setBearerAuth(apiKey);
                 HttpEntity<String> request = new HttpEntity<>(jsonRequest, headers);
 
-                String url = String.format("%s/models/%s:generateContent?key=%s", apiBaseUrl, modelName, apiKey);
-                log.debug("Calling Gemini API (attempt {})", attempt + 1);
+                String url = String.format("%s/chat/completions", apiBaseUrl);
+                log.debug("Calling Groq API (attempt {})", attempt + 1);
 
                 ResponseEntity<String> response = restTemplate.exchange(
                     url, HttpMethod.POST, request, String.class);
@@ -139,7 +141,7 @@ public class GeminiService {
                 return;
 
             } catch (RestClientResponseException e) {
-                log.error("Generation attempt {} failed with Gemini HTTP {}: {}", attempt + 1, e.getStatusCode(), e.getResponseBodyAsString());
+                log.error("Generation attempt {} failed with Groq HTTP {}: {}", attempt + 1, e.getStatusCode(), e.getResponseBodyAsString());
                 Integer providerStatusCode = e.getStatusCode().value();
                 String failureReason = buildProviderFailureReason(providerStatusCode, e.getResponseBodyAsString());
                 if (NON_RETRYABLE_HTTP_STATUSES.contains(providerStatusCode)) {
@@ -161,7 +163,7 @@ public class GeminiService {
                 log.error("Generation attempt {} network/timeout error: {}", attempt + 1, e.getMessage());
                 if (attempt >= MAX_RETRIES) {
                     log.error("Max retries reached for generation {}", generationId);
-                    markGenerationFailed(generationId, "Network timeout while contacting Gemini API", null);
+                    markGenerationFailed(generationId, "Network timeout while contacting Groq API", null);
                     return;
                 }
 
@@ -191,20 +193,22 @@ public class GeminiService {
 
     private String buildRequestJson(String userInput) {
         try {
-            // System instruction - parts must be an array
-            Map<String, Object> systemInstruction = Map.of(
-                "parts", new Object[]{Map.of("text", SYSTEM_PROMPT + "\n" + CONSTRAINT_PROMPT)}
+            // OpenAI-compatible messages format used by Groq
+            Map<String, Object> systemMessage = Map.of(
+                "role", "system",
+                "content", SYSTEM_PROMPT + "\n" + CONSTRAINT_PROMPT
             );
 
-            Map<String, Object> userPart = Map.of("text", userInput);
-            Map<String, Object> userContent = Map.of(
+            Map<String, Object> userMessage = Map.of(
                 "role", "user",
-                "parts", new Object[]{userPart}
+                "content", userInput
             );
 
             Map<String, Object> requestMap = new HashMap<>();
-            requestMap.put("contents", new Object[]{userContent});
-            requestMap.put("systemInstruction", systemInstruction);
+            requestMap.put("model", modelName);
+            requestMap.put("messages", new Object[]{systemMessage, userMessage});
+            // Low temperature for consistent structured JSON output
+            requestMap.put("temperature", 0.3);
 
             // Jackson handles all JSON escaping automatically
             return objectMapper.writeValueAsString(requestMap);
@@ -216,20 +220,21 @@ public class GeminiService {
 
     private String extractTextFromResponse(String jsonResponse) {
         try {
+            // Groq uses OpenAI-compatible response: choices[0].message.content
             JsonNode root = objectMapper.readTree(jsonResponse);
-            JsonNode candidates = root.get("candidates");
-            if (candidates == null || candidates.isEmpty()) {
-                throw new RuntimeException("No candidates in response");
+            JsonNode choices = root.get("choices");
+            if (choices == null || choices.isEmpty()) {
+                throw new RuntimeException("No choices in response");
             }
-            JsonNode content = candidates.get(0).get("content");
+            JsonNode message = choices.get(0).get("message");
+            if (message == null) {
+                throw new RuntimeException("No message in choice");
+            }
+            JsonNode content = message.get("content");
             if (content == null) {
-                throw new RuntimeException("No content in candidate");
+                throw new RuntimeException("No content in message");
             }
-            JsonNode parts = content.get("parts");
-            if (parts == null || parts.isEmpty()) {
-                throw new RuntimeException("No parts in content");
-            }
-            return parts.get(0).get("text").asText();
+            return content.asText();
         } catch (Exception e) {
             log.error("Failed to extract text from response: {}", e.getMessage());
             throw new RuntimeException("Failed to parse API response", e);
@@ -249,15 +254,15 @@ public class GeminiService {
 
     private String buildProviderFailureReason(Integer statusCode, String responseBody) {
         if (statusCode == 404) {
-            return String.format("Configured Gemini model '%s' is unavailable for generateContent", modelName);
+            return String.format("Configured Groq model '%s' is unavailable", modelName);
         }
         if (statusCode == 429) {
-            return "Gemini API rate limit or quota exceeded";
+            return "Groq API rate limit or quota exceeded";
         }
         if (responseBody != null && !responseBody.isBlank()) {
-            return String.format("Gemini API error %d", statusCode);
+            return String.format("Groq API error %d", statusCode);
         }
-        return String.format("Gemini API request failed with status %d", statusCode);
+        return String.format("Groq API request failed with status %d", statusCode);
     }
 
     private void markGenerationFailed(UUID generationId, String failureReason, Integer providerStatusCode) {
@@ -274,7 +279,7 @@ public class GeminiService {
         List<TaskDTO> tasks = new ArrayList<>();
 
         try {
-            // Strip markdown code fences if Gemini wraps response in ```json ... ```
+            // Strip markdown code fences if LLM wraps response in ```json ... ```
             String cleaned = jsonResponse.trim();
             if (cleaned.startsWith("```")) {
                 cleaned = cleaned.replaceAll("^```[a-zA-Z]*\\n?", "").replaceAll("```$", "").trim();
