@@ -1,13 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
 import { TaskService } from '../../core/services/task.service';
 import { CommentService, Comment } from '../../core/services/comment.service';
 import { AttachmentService, Attachment } from '../../core/services/attachment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AIService } from '../../core/services/ai.service';
 import { LabelService, Label } from '../../core/services/label.service';
+import { ProjectService, ProjectMember } from '../../core/services/project.service';
 import { Task, Priority } from '../../core/models/task.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -23,6 +26,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class TaskDetailComponent implements OnInit {
   task: Task | null = null;
+  loadingTask = true;
+  taskLoadError: string | null = null;
   comments: Comment[] = [];
   attachments: Attachment[] = [];
   activeTab: 'details' | 'comments' | 'attachments' = 'details';
@@ -43,6 +48,10 @@ export class TaskDetailComponent implements OnInit {
   isRegenerating = false;
   projectLabels: Label[] = [];
   showLabelManager = false;
+  projectMembers: ProjectMember[] = [];
+  selectedAssigneeId = '';
+  assigningTask = false;
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private route: ActivatedRoute,
@@ -53,34 +62,73 @@ export class TaskDetailComponent implements OnInit {
     private authService: AuthService,
     private aiService: AIService,
     private labelService: LabelService,
+    private projectService: ProjectService,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
     const user = this.authService.getCurrentUser();
     this.currentUserId = user?.id || null;
-    
-    const taskId = this.route.snapshot.paramMap.get('id');
-    if (taskId) {
-      this.loadTask(taskId);
-      this.loadComments(taskId);
-      this.loadAttachments(taskId);
-    }
+
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const taskId = params.get('id');
+        if (!taskId) {
+          this.task = null;
+          this.loadingTask = false;
+          this.taskLoadError = 'Identifiant de tâche invalide.';
+          return;
+        }
+
+        this.loadTask(taskId);
+        this.loadComments(taskId);
+        this.loadAttachments(taskId);
+      });
   }
 
   loadTask(taskId: string): void {
-    this.taskService.getTaskById(taskId).subscribe({
-      next: (task) => {
-        this.task = task;
-        this.loadProjectLabels(task.projectId);
-      },
-      error: () => this.snackBar.open('Erreur lors du chargement de la tâche', 'Fermer', { duration: 3000 })
-    });
+    this.loadingTask = true;
+    this.taskLoadError = null;
+    this.task = null;
+
+    this.taskService.getTaskById(taskId)
+      .pipe(
+        finalize(() => {
+          this.loadingTask = false;
+        })
+      )
+      .subscribe({
+        next: (task) => {
+          this.task = task;
+          this.selectedAssigneeId = '';
+          this.loadProjectLabels(task.projectId);
+          this.loadProjectMembers(task.projectId, task.assignedToEmail);
+        },
+        error: () => {
+          this.taskLoadError = 'Impossible de charger cette tâche.';
+          this.snackBar.open('Erreur lors du chargement de la tâche', 'Fermer', { duration: 3000 });
+        }
+      });
   }
 
   loadProjectLabels(projectId: string): void {
     this.labelService.getProjectLabels(projectId).subscribe({
       next: (labels) => this.projectLabels = labels
+    });
+  }
+
+  loadProjectMembers(projectId: string, assignedToEmail: string | null): void {
+    this.projectService.getProjectMembers(projectId).subscribe({
+      next: (members) => {
+        this.projectMembers = members;
+        const selectedMember = members.find(member => member.user.email === assignedToEmail);
+        this.selectedAssigneeId = selectedMember?.user.id || '';
+      },
+      error: () => {
+        this.projectMembers = [];
+        this.selectedAssigneeId = '';
+      }
     });
   }
 
@@ -238,6 +286,34 @@ export class TaskDetailComponent implements OnInit {
         this.task = updated;
       },
       error: () => this.snackBar.open('Erreur lors de la mise à jour des labels', 'Fermer', { duration: 3000 })
+    });
+  }
+
+  onAssigneeChange(assigneeId: string): void {
+    if (!this.task || this.assigningTask) return;
+
+    const normalizedAssigneeId = assigneeId || null;
+    const currentAssigneeId = this.selectedAssigneeId || null;
+    if (currentAssigneeId === normalizedAssigneeId) {
+      return;
+    }
+
+    this.assigningTask = true;
+    const request$ = normalizedAssigneeId
+      ? this.taskService.assignTask(this.task.id, normalizedAssigneeId)
+      : this.taskService.updateTask(this.task.id, { assignedToId: null });
+
+    request$.subscribe({
+      next: (updatedTask) => {
+        this.task = updatedTask;
+        this.selectedAssigneeId = normalizedAssigneeId || '';
+        this.assigningTask = false;
+        this.snackBar.open('Assignation mise a jour', 'Fermer', { duration: 2000 });
+      },
+      error: () => {
+        this.assigningTask = false;
+        this.snackBar.open('Erreur lors de l assignation', 'Fermer', { duration: 3000 });
+      }
     });
   }
 

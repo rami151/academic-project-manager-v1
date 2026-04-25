@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, interval } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, BehaviorSubject, interval, of, throwError } from 'rxjs';
 import { switchMap, startWith, shareReplay } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
+import { AuthService } from './auth.service';
 
 export interface Notification {
   id: string;
@@ -25,7 +27,10 @@ export class NotificationService {
   private unreadCountSubject = new BehaviorSubject<number>(0);
   unreadCount$ = this.unreadCountSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {
     this.startPolling();
   }
 
@@ -40,7 +45,20 @@ export class NotificationService {
   }
 
   getNotifications(unreadOnly: boolean = false): Observable<Notification[]> {
-    return this.http.get<Notification[]>(`${this.apiUrl}?unreadOnly=${unreadOnly}`);
+    if (!this.authService.isAuthenticated()) {
+      return of([]);
+    }
+
+    return this.http.get<Notification[]>(`${this.apiUrl}?unreadOnly=${unreadOnly}`).pipe(
+      catchError((error: HttpErrorResponse) => {
+        // Notification polling should not surface as a blocking UI error when auth is missing/expired.
+        if (error.status === 401 || error.status === 403) {
+          this.unreadCountSubject.next(0);
+          return of([]);
+        }
+        return throwError(() => error);
+      })
+    );
   }
 
   markAsRead(notificationId: string): Observable<void> {

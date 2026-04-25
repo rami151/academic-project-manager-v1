@@ -1,5 +1,12 @@
 <div class="min-h-screen bg-neutral-50 p-6">
-  @if (task) {
+  @if (loadingTask) {
+    <div class="flex justify-center items-center min-h-64">
+      <div class="flex flex-col items-center gap-4">
+        <div class="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+        <p class="text-neutral-500 font-medium">Chargement des détails...</p>
+      </div>
+    </div>
+  } @else if (task) {
     <div class="max-w-4xl mx-auto">
       <!-- Header -->
       <div class="flex items-center gap-4 mb-6">
@@ -160,17 +167,20 @@
                   <span class="text-sm text-neutral-900">{{ formatDate(task.dueDate) }}</span>
                 </div>
               }
-              @if (task.assignedToName) {
-                <div>
-                  <span class="text-xs font-semibold text-neutral-400 uppercase block mb-1">Assigné à</span>
-                  <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 text-[10px] font-bold">
-                      {{ task.assignedToName.charAt(0) }}
-                    </div>
-                    <span class="text-sm text-neutral-900">{{ task.assignedToName }}</span>
-                  </div>
-                </div>
-              }
+              <div>
+                <span class="text-xs font-semibold text-neutral-400 uppercase block mb-1">Assignee</span>
+                <select
+                  [ngModel]="selectedAssigneeId"
+                  (ngModelChange)="onAssigneeChange($event)"
+                  [disabled]="assigningTask"
+                  class="w-full md:w-72 px-3 py-2 border border-neutral-300 rounded-lg text-sm text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">Non assignee</option>
+                  @for (member of projectMembers; track member.id) {
+                    <option [value]="member.user.id">{{ member.user.name }} ({{ member.user.email }})</option>
+                  }
+                </select>
+              </div>
             </div>
           </div>
         }
@@ -298,11 +308,15 @@
       </div>
     </div>
   } @else {
-    <div class="flex justify-center items-center min-h-64">
-      <div class="flex flex-col items-center gap-4">
-        <div class="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-        <p class="text-neutral-500 font-medium">Chargement des détails...</p>
-      </div>
+    <div class="max-w-xl mx-auto bg-white border border-neutral-200 rounded-xl p-6 text-center shadow-sm">
+      <h2 class="text-lg font-semibold text-neutral-900 mb-2">Impossible d'afficher la tâche</h2>
+      <p class="text-sm text-neutral-600 mb-5">{{ taskLoadError || 'La tâche demandée est introuvable.' }}</p>
+      <button
+        (click)="goBack()"
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+      >
+        Retour
+      </button>
     </div>
   }
 </div>

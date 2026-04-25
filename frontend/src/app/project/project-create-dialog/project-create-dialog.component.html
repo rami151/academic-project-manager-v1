@@ -4,7 +4,7 @@
   <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary-100/30 rounded-full blur-3xl z-[-10]"></div>
 
   <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-bold text-neutral-900">Créer un Projet</h2>
+    <h2 class="text-xl font-bold text-neutral-900">{{ isEditMode ? 'Modifier le Projet' : 'Creer un Projet' }}</h2>
     <button (click)="onCancel()" class="p-2 hover:bg-neutral-100 rounded-lg transition-colors">
       <svg class="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -105,8 +105,8 @@
         @if (isSubmitting) {
           <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
         }
-        <span>{{ isSubmitting ? 'Création...' : 'Créer le projet' }}</span>
+        <span>{{ isSubmitting ? (isEditMode ? 'Mise a jour...' : 'Creation...') : (isEditMode ? 'Mettre a jour le projet' : 'Creer le projet') }}</span>
       </button>
     </div>
   </form>
-</div>
+</div>

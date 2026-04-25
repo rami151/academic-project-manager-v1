@@ -14,6 +14,7 @@ import { ProjectService, Project, ProjectMember, Permission } from '../../core/s
 import { AuthService } from '../../core/services/auth.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
 import { InviteMemberDialogComponent } from '../invite-member-dialog/invite-member-dialog.component';
+import { ProjectCreateDialogComponent } from '../project-create-dialog/project-create-dialog.component';
 
 @Component({
   selector: 'app-project-detail',
@@ -68,6 +69,7 @@ export class ProjectDetailComponent implements OnInit {
       next: (project) => {
         setTimeout(() => {
           this.project = project;
+          this.calculateCurrentUserPermission();
           this.isLoading = false;
           this.cdr.detectChanges();
         });
@@ -102,12 +104,39 @@ export class ProjectDetailComponent implements OnInit {
 
   calculateCurrentUserPermission(): void {
     const currentUser = this.authService.getCurrentUser();
-    if (currentUser && currentUser.id && this.members && this.members.length > 0) {
-      const member = this.members.find(m => m.user && m.user.id === currentUser.id);
-      this.currentUserPermission = member?.permission || 'VIEWER';
-    } else {
+    if (!currentUser?.id) {
       this.currentUserPermission = 'VIEWER';
+      return;
     }
+
+    if (this.project?.owner?.id === currentUser.id) {
+      this.currentUserPermission = 'OWNER';
+      return;
+    }
+
+    if (this.members && this.members.length > 0) {
+      const member = this.members.find(m => m.user && m.user.id === currentUser.id);
+      this.currentUserPermission = this.normalizePermission(member?.permission);
+      return;
+    }
+
+    this.currentUserPermission = 'VIEWER';
+  }
+
+  private normalizePermission(permission: string | undefined): Permission {
+    if (!permission) {
+      return 'VIEWER';
+    }
+
+    const normalized = permission.toUpperCase();
+    if (normalized.includes('OWNER')) {
+      return 'OWNER';
+    }
+    if (normalized.includes('EDITOR')) {
+      return 'EDITOR';
+    }
+
+    return 'VIEWER';
   }
 
   openInviteDialog(): void {
@@ -205,6 +234,43 @@ export class ProjectDetailComponent implements OnInit {
     if (projectId) {
       this.router.navigate(['/tasks', 'projects', projectId, 'kanban']);
     }
+  }
+
+  openEditProjectDialog(): void {
+    const projectId = this.route.snapshot.paramMap.get('id');
+    if (!projectId || !this.project) return;
+
+    this.dialog.open(ProjectCreateDialogComponent, {
+      width: '500px',
+      data: { project: this.project }
+    }).afterClosed().subscribe(updatedProject => {
+      if (updatedProject) {
+        this.project = updatedProject;
+      }
+    });
+  }
+
+  deleteProject(): void {
+    const projectId = this.route.snapshot.paramMap.get('id');
+    if (!projectId || !this.project) return;
+
+    if (!confirm(`Voulez-vous vraiment supprimer le projet "${this.project.name}" ?`)) {
+      return;
+    }
+
+    this.projectService.deleteProject(projectId).subscribe({
+      next: () => {
+        this.snackbarService.success('Projet supprime avec succes');
+        this.router.navigate(['/projects']);
+      },
+      error: (error) => {
+        this.snackbarService.error(error.message || 'Impossible de supprimer le projet');
+      }
+    });
+  }
+
+  canDeleteProject(): boolean {
+    return this.currentUserPermission === 'OWNER';
   }
 
   formatDeadline(deadline: string): string {

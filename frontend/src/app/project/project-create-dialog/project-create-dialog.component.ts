@@ -1,4 +1,4 @@
-import { Component, Inject, ChangeDetectorRef } from '@angular/core';
+import { Component, Inject, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -18,7 +18,7 @@ interface FormData {
   templateUrl: './project-create-dialog.component.html',
   styleUrl: './project-create-dialog.component.scss'
 })
-export class ProjectCreateDialogComponent {
+export class ProjectCreateDialogComponent implements OnInit {
   formData: FormData = {
     name: '',
     description: '',
@@ -36,6 +36,22 @@ export class ProjectCreateDialogComponent {
     private cdr: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA) public data: { project?: Project }
   ) {}
+
+  ngOnInit(): void {
+    if (!this.data?.project) {
+      return;
+    }
+
+    this.formData = {
+      name: this.data.project.name,
+      description: this.data.project.description,
+      deadline: this.data.project.deadline ? this.data.project.deadline.split('T')[0] : ''
+    };
+  }
+
+  get isEditMode(): boolean {
+    return !!this.data?.project;
+  }
 
   onSubmit(): void {
     this.formErrors = {};
@@ -67,18 +83,24 @@ export class ProjectCreateDialogComponent {
     this.isSubmitting = true;
     this.errorMessage = '';
 
-    this.projectService.createProject({
+    const payload = {
       name: this.formData.name,
       description: this.formData.description,
       deadline: this.formData.deadline.includes('T') ? this.formData.deadline : this.formData.deadline + 'T23:59:59'
-    }).subscribe({
-      next: (newProject) => {
-        this.snackbarService.success('Projet créé avec succès !');
-        this.dialogRef.close(newProject);
+    };
+
+    const request$ = this.isEditMode && this.data.project
+      ? this.projectService.updateProject(this.data.project.id, payload)
+      : this.projectService.createProject(payload);
+
+    request$.subscribe({
+      next: (project) => {
+        this.snackbarService.success(this.isEditMode ? 'Projet mis a jour avec succes !' : 'Projet cree avec succes !');
+        this.dialogRef.close(project);
       },
       error: (error) => {
-        this.errorMessage = error.message || 'Impossible de créer le projet';
-        this.snackbarService.error('Impossible de créer le projet');
+        this.errorMessage = error.message || (this.isEditMode ? 'Impossible de modifier le projet' : 'Impossible de creer le projet');
+        this.snackbarService.error(this.isEditMode ? 'Impossible de modifier le projet' : 'Impossible de creer le projet');
         this.isSubmitting = false;
         this.cdr.detectChanges();
       }
